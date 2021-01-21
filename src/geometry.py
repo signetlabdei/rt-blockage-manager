@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Tuple, Union
+from typing import Tuple, Union, Sequence
 
 
 class GeometryArithmeticError(Exception):
@@ -14,10 +14,22 @@ class Point:
     def __init__(self, x: float, y: float, z: float):
         self.coord = np.array([x, y, z])
 
-    def __add__(self, other):
+    @staticmethod
+    def from_array(xx: Sequence) -> 'Point':
+        assert len(xx) == 3, f"Invalid array: {xx}"
+        return Point(xx[0], xx[1], xx[2])
+
+    def __repr__(self):
+        return f"Point({self.coord[0]}, {self.coord[1]}, {self.coord[2]})"
+
+    def __add__(self, other: 'Vector'):
+        if type(other) == Vector:
+            s = self.coord + other.coord
+            return Point.from_array(s)
+
         raise GeometryArithmeticError(other)
 
-    def __sub__(self, other):
+    def __sub__(self, other: 'Point'):
         if type(other) == type(self):
             diff = other.coord - self.coord
             return Vector.from_array(diff)
@@ -30,33 +42,53 @@ class Vector:
         self.coord = np.array([x, y, z])
 
     @staticmethod
-    def from_array(xx) -> 'Vector':
+    def from_array(xx: Sequence) -> 'Vector':
         assert len(xx) == 3, f"Invalid array: {xx}"
         return Vector(xx[0], xx[1], xx[2])
 
-    def __add__(self, other):
+    def normalize(self) -> 'Vector':
+        return Vector.from_array(self.coord / self.length())
+
+    def __repr__(self):
+        return f"Vector({self.coord[0]}, {self.coord[1]}, {self.coord[2]})"
+
+    def __add__(self, other: Union['Vector', Point]):
         if type(other) == type(self):
             s = self.coord + other.coord
             return Vector.from_array(s)
 
+        if type(other) == Point:
+            s = self.coord + other.coord
+            return Point.from_array(s)
+
         raise GeometryArithmeticError(other)
 
-    def __sub__(self, other):
+    def __sub__(self, other: 'Vector'):
         if type(other) == type(self):
             s = self.coord - other.coord
             return Vector.from_array(s)
 
         raise GeometryArithmeticError(other)
 
-    def __mul__(self, other):
+    def __mul__(self, other: Union[float, int]):
+        if np.issubdtype(type(other), np.integer) \
+                or np.issubdtype(type(other), np.float):
+            other = float(other)
+
         if type(other) == float:
             s = self.coord * other
             return Vector.from_array(s)
 
         raise GeometryArithmeticError(other)
 
-    def __rmul__(self, other):
+    def __rmul__(self, other: Union[float, int]):
         return self * other
+
+    def __truediv__(self, other: Union[float, int]):
+        return self * (1 / other)
+
+    def __rtruediv__(self, other):
+        return (1 / other) * self
 
     def azimuth(self) -> float:
         return np.arctan2(self.coord[1], self.coord[0])
@@ -78,6 +110,12 @@ class Segment:
     def __init__(self, start: Point, end: Point):
         self.start = start
         self.end = end
+
+    def length(self):
+        return (self.end - self.start).length()
+
+    def __repr__(self):
+        return f"Segment({self.start}, {self.end})"
 
     def aod_azimuth(self) -> float:
         v = self.end - self.start
@@ -109,8 +147,14 @@ class Line:
         self.p = p
         self.v = v
 
+    def __repr__(self):
+        return f"Line({self.p}, {self.v})"
 
-def distance(p: Point, x: Union[Line, Segment]) -> float:
+
+def distance(p: Point, x: Union[Point, Line, Segment]) -> float:
+    if type(x) == Point:
+        return (p - x).length()
+
     if type(x) == Line:
         projection, _ = project(p, x)
         return (p - projection).length()
@@ -128,6 +172,8 @@ def distance(p: Point, x: Union[Line, Segment]) -> float:
         else:
             # Shortest distance from projection
             return (p - projection).length()
+
+    raise TypeError(f"Type of x={type(x)} not supported")
 
 
 def project(p: Point, x: Line) -> Tuple[Point, float]:
