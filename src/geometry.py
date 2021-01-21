@@ -163,7 +163,7 @@ def distance(p: Point, x: Union[Point, Line, Segment]) -> float:
         line = Line(x.start, x.end - x.start)
         projection, t = project(p, line)
 
-        if t > 1.0:
+        if t > x.length():
             # Shortest distance from segment end
             return (p - x.end).length()
         elif t < 0.0:
@@ -181,6 +181,7 @@ def project(p: Point, x: Line) -> Tuple[Point, float]:
     # distance(x=a+t*n, p) = ||(a-p) - ((a-p).dot(n))n||
     # p: p
     # x = a + t * n: x = x.p + t * x.v
-    t = -(x.p - p).dot(x.v)
-    projection = x.p + t * x.v
+    norm_v = x.v.normalize()
+    t = -(x.p - p).dot(norm_v)
+    projection = x.p + t * norm_v
     return projection, t
