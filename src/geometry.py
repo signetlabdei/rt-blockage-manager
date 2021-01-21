@@ -31,7 +31,7 @@ class Point:
 
     def __sub__(self, other: 'Point'):
         if type(other) == type(self):
-            diff = other.coord - self.coord
+            diff = self.coord - other.coord
             return Vector.from_array(diff)
 
         raise GeometryArithmeticError(other)
