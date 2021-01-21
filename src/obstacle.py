@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from src import geometry as geom
 from src.ray import Ray
-from typing import Union
+from typing import Union, Optional
 
 
 class Obstacle(ABC):
@@ -20,11 +20,11 @@ class Obstacle(ABC):
         pass
 
     @abstractmethod
-    def obstructs(self, ray: Ray) -> bool:
+    def obstructs(self, r: Union[geom.Segment, Ray]) -> bool:
         pass
 
     @abstractmethod
-    def specular_reflection(self, pa: geom.Point, pb: geom.Point) -> geom.Point:
+    def specular_reflection(self, pa: geom.Point, pb: geom.Point) -> Optional[geom.Point]:
         pass
 
 
@@ -55,16 +55,22 @@ class SphereObstacle(Obstacle):
     def transmission_loss(self):
         return self._transmission_loss
 
-    def obstructs(self, ray: Ray) -> bool:
-        for p1, p2 in zip(ray.vertices[:-1], ray.vertices[1:]):
-            segment = geom.Segment(p1, p2)
-            d = geom.distance(self._location, segment)
-            if d < self._radius:
+    def obstructs(self, r: Union[geom.Segment, Ray]) -> bool:
+        if type(r) is geom.Segment:
+            d = geom.distance(self.location, r)
+            if d < self.radius:
                 return True
+
+        elif type(r) is Ray:
+            for p1, p2 in zip(r.vertices[:-1], r.vertices[1:]):
+                segment = geom.Segment(p1, p2)
+                d = geom.distance(self.location, segment)
+                if d < self.radius:
+                    return True
 
         return False
 
-    def specular_reflection(self, pa: geom.Point, pb: geom.Point) -> Union[geom.Point, None]:
+    def specular_reflection(self, pa: geom.Point, pb: geom.Point) -> Optional[geom.Point]:
         # https://www.geometrictools.com/Documentation/SphereReflections.pdf
 
         # check if a reflection is possible
@@ -103,3 +109,17 @@ class SphereObstacle(Obstacle):
                 return N
 
         raise ArithmeticError("Specular reflection not found")
+
+    def __repr__(self):
+        return f"SphereObstacle({self.location}, {self.radius}, reflection_loss={self.reflection_loss}, " \
+               f"transmission_loss={self.transmission_loss})"
+
+
+if __name__ is '__main__':
+    s = SphereObstacle(geom.Point(0, 0, 0), 0.2)
+
+    pointa = geom.Point(0, 3, 0)
+    pointb = geom.Point(3, 0, 0)
+
+    print('s.obstructs(geom.Segment(pa, pb))=', s.obstructs(geom.Segment(pointa, pointb)))
+    print('reflection: ', s.specular_reflection(pointa, pointb))
