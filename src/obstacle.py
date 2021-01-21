@@ -66,4 +66,40 @@ class SphereObstacle(Obstacle):
 
     def specular_reflection(self, pa: geom.Point, pb: geom.Point) -> Union[geom.Point, None]:
         # https://www.geometrictools.com/Documentation/SphereReflections.pdf
-        return None
+
+        # check if a reflection is possible
+        if geom.distance(pa, self.location) <= self.radius:
+            # pa inside the sphere
+            return None
+        if geom.distance(pb, self.location) <= self.radius:
+            # pb inside the sphere
+            return None
+        if self.obstructs(geom.Segment(pa, pb)):
+            # pb in shadow cone of pb
+            return None
+
+        # Use the center of the sphere as the origin
+        L = pa - self.location
+        S = pb - self.location
+
+        a = S.dot(S)
+        b = S.dot(L)
+        c = L.dot(L)
+
+        poly = [4 * c * (a * c - b ** 2),
+                -4 * (a * c - b ** 2),
+                a + 2 * b + c - 4 * a * c,
+                2 * (a - b),
+                a - 1]
+        r = np.roots(poly)
+
+        for y in filter(lambda root: root > 0, r):
+            x = (-2 * c * y ** 2 + y + 1) / (2 * b * y + 1)
+            if x > 0:
+                print(x, y)
+                # valid point on surface only if both x and y are >0
+                # rescale it to sphere radius
+                N = (x * S + y * L) * self.radius
+                return N
+
+        raise ArithmeticError("Specular reflection not found")
