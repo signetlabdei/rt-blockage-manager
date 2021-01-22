@@ -160,6 +160,38 @@ class Line:
         return f"Line({self.p}, {self.v})"
 
 
+class Rectangle:
+    def __init__(self, x0: float, y0: float, width: float, height: float):
+        self._x0 = x0
+        self._y0 = y0
+        self._width = width
+        self._height = height
+
+    @property
+    def x0(self):
+        return self._x0
+
+    @property
+    def y0(self):
+        return self._y0
+
+    @property
+    def width(self):
+        return self._width
+
+    @property
+    def height(self):
+        return self._height
+
+    def is_inside(self, p: Point):
+        if (self.x0 <= p.x <= self.x0 + self.width) and (self.y0 <= p.y <= self.y0 + self.height):
+            return True
+        return False
+
+    def __repr__(self):
+        return f"Rectangle({self.x0}, {self.y0}, {self.width}, {self.height})"
+
+
 def distance(p: Point, x: Union[Point, Line, Segment]) -> float:
     if type(x) == Point:
         return (p - x).length()
