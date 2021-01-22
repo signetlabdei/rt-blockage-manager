@@ -9,7 +9,8 @@
 
 from abc import ABC, abstractmethod
 from src.geometry import Point, Vector, Rectangle
-from typing import Optional, Callable
+from typing import Optional, Callable, Sequence, Union
+import collections
 import logging
 
 import numpy as np
@@ -59,7 +60,8 @@ class ConstantAccelerationMobilityModel(MobilityModel):
 
 
 class RandomWaypointMobilityModel(MobilityModel):
-    def __init__(self, bounding_box: Rectangle, position_allocation: RandomPositionAllocation, speed_rv: Callable[[], float],
+    def __init__(self, bounding_box: Rectangle, position_allocation: RandomPositionAllocation,
+                 speed_rv: Callable[[], float],
                  pause_rv: Callable[[], float], start_position: Optional[Point] = None):
         self._bounding_box = bounding_box
         self._position_allocator = position_allocation
@@ -120,16 +122,82 @@ class RandomWaypointMobilityModel(MobilityModel):
         return p
 
 
+class WaypointMobilityModel(MobilityModel):
+    def __init__(self, positions: Sequence[Point], speeds: Union[Sequence[float], float],
+                 pauses: Union[Sequence[float], float]):
+        # setup object so that speeds and pauses are lists of length len(postitions)-1
+        self._positions = positions
+
+        if isinstance(speeds, collections.Sequence):
+            assert len(speeds) == len(self._positions) - 1
+            self._speeds = speeds
+        elif np.issubdtype(type(speeds), np.float) or np.issubdtype(type(speeds), np.integer):
+            self._speeds = [float(speeds)] * (len(self._positions) - 1)
+        else:
+            raise TypeError(f"Type {type(speeds)} not supported for speeds")
+
+        if isinstance(pauses, collections.Sequence):
+            assert len(pauses) == len(self._positions) - 1
+            self._pauses = pauses
+        elif np.issubdtype(type(pauses), np.float) or np.issubdtype(type(pauses), np.integer):
+            self._pauses = [float(pauses)] * (len(self._positions) - 1)
+        else:
+            raise TypeError(f"Type {type(pauses)} not supported for pauses")
+
+        # Look-up table for start time of a waypoint segment
+        segment_duration = [(pb - pa).length() / speed + pause
+                            for pa, pb, speed, pause in zip(self._positions[:-1],
+                                                            self._positions[1:],
+                                                            self._speeds,
+                                                            self._pauses)]
+        self._start_time_pos = [0.0] + np.cumsum(segment_duration).tolist()
+        self._current_pos_idx = 0
+
+    def location(self, t: float) -> Point:
+        assert t <= self.max_mobility_duration(), \
+            f"Time {t} exceeds the maximum mobility duration ({self._start_time_pos[-1]})"
+
+        # advance to next waypoint segment if necessary
+        while t > self._start_time_pos[self._current_pos_idx + 1]:
+            self._current_pos_idx += 1
+
+        pa = self._positions[self._current_pos_idx]
+        pb = self._positions[self._current_pos_idx + 1]
+        speed = self._speeds[self._current_pos_idx]
+        pause = self._pauses[self._current_pos_idx]
+
+        dt = t - self._start_time_pos[self._current_pos_idx]
+        t_to_next_waypoint = (pb - pa).length() / speed
+
+        if dt < t_to_next_waypoint:
+            direction = (pb - pa).normalize()
+            return pa + dt * speed * direction
+        elif dt <= t_to_next_waypoint + pause:
+            return pb
+
+        raise RuntimeError(f"WaypointMobilityModel is in an unexpected state: dt={dt}, "
+                           f"t_to_next_waypoint={t_to_next_waypoint}, pause={pause}")
+
+    def max_mobility_duration(self):
+        return self._start_time_pos[-1]
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.WARN)
 
-    m = RandomWaypointMobilityModel(bounding_box=Rectangle(0, 0, 10, 10),
-                                    position_allocation=RandomPositionAllocation(lambda: np.random.uniform(0, 11),
-                                                                                 lambda: np.random.uniform(0, 11),
-                                                                                 lambda: 0),
-                                    speed_rv=lambda: np.random.uniform(2, 6),
-                                    pause_rv=lambda: np.random.uniform(2, 6),
-                                    start_position=Point(0, 0, 0))
+    rwmm = RandomWaypointMobilityModel(bounding_box=Rectangle(0, 0, 10, 10),
+                                       position_allocation=RandomPositionAllocation(lambda: np.random.uniform(0, 11),
+                                                                                    lambda: np.random.uniform(0, 11),
+                                                                                    lambda: 0),
+                                       speed_rv=lambda: np.random.uniform(2, 6),
+                                       pause_rv=lambda: np.random.uniform(2, 6),
+                                       start_position=Point(0, 0, 0))
+
+    wmm = WaypointMobilityModel([Point(0, 0, 0), Point(10, 0, 0), Point(10, 10, 0), Point(0, 10, 0), Point(0, 0, 0)],
+                                speeds=2,
+                                pauses=2)
 
     for time in range(0, 100, 1):
-        print(time, m.location(time))
+        if time > wmm.max_mobility_duration():
+            break
+        print(time, wmm.location(time))
