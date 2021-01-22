@@ -23,13 +23,25 @@ class Point:
     def __init__(self, x: float, y: float, z: float):
         self.coord = np.array([x, y, z])
 
+    @property
+    def x(self):
+        return self.coord[0]
+
+    @property
+    def y(self):
+        return self.coord[1]
+
+    @property
+    def z(self):
+        return self.coord[2]
+
     @staticmethod
     def from_array(xx: Sequence) -> 'Point':
         assert len(xx) == 3, f"Invalid array: {xx}"
         return Point(xx[0], xx[1], xx[2])
 
     def __repr__(self):
-        return f"Point({self.coord[0]}, {self.coord[1]}, {self.coord[2]})"
+        return f"Point({self.x}, {self.y}, {self.z})"
 
     def __add__(self, other: 'Vector'):
         if type(other) == Vector:
@@ -50,6 +62,18 @@ class Vector:
     def __init__(self, x: float, y: float, z: float):
         self.coord = np.array([x, y, z])
 
+    @property
+    def x(self):
+        return self.coord[0]
+
+    @property
+    def y(self):
+        return self.coord[1]
+
+    @property
+    def z(self):
+        return self.coord[2]
+
     @staticmethod
     def from_array(xx: Sequence) -> 'Vector':
         assert len(xx) == 3, f"Invalid array: {xx}"
@@ -59,7 +83,7 @@ class Vector:
         return Vector.from_array(self.coord / self.length())
 
     def __repr__(self):
-        return f"Vector({self.coord[0]}, {self.coord[1]}, {self.coord[2]})"
+        return f"Vector({self.x}, {self.y}, {self.z})"
 
     def __add__(self, other: Union['Vector', Point]):
         if type(other) == type(self):
@@ -100,13 +124,13 @@ class Vector:
         return (1 / other) * self
 
     def azimuth(self) -> float:
-        return np.arctan2(self.coord[1], self.coord[0])
+        return np.arctan2(self.y, self.x)
 
     def inclination(self) -> float:
-        return np.arccos(self.coord[2] / self.length())
+        return np.arccos(self.z / self.length())
 
     def elevation(self) -> float:
-        return np.arcsin(self.coord[2] / self.length())
+        return np.arcsin(self.z / self.length())
 
     def length(self) -> float:
         return np.linalg.norm(self.coord)
