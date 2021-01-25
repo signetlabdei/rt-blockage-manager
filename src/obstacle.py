@@ -109,7 +109,9 @@ class SphereObstacle(Obstacle):
                 # valid point on surface only if both x and y are >0
                 # rescale it to sphere radius
                 N = (x * S + y * L) * self.radius
-                return N
+
+                # Return point in space
+                return self.location + N
 
         raise ArithmeticError("Specular reflection not found")
 
