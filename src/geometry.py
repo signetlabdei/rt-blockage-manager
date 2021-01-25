@@ -57,6 +57,12 @@ class Point:
 
         raise GeometryArithmeticError(other)
 
+    def __eq__(self, other: 'Point') -> bool:
+        if type(other) != type(self):
+            raise GeometryArithmeticError(other)
+
+        return (self.x == other.x) and (self.y == other.y) and (self.z == other.z)
+
 
 class Vector:
     def __init__(self, x: float, y: float, z: float):
@@ -117,8 +123,11 @@ class Vector:
     def __truediv__(self, other: Union[float, int]) -> 'Vector':
         return self * (1 / other)
 
-    def __rtruediv__(self, other):
-        return (1 / other) * self
+    def __eq__(self, other: 'Vector') -> bool:
+        if type(other) != type(self):
+            raise GeometryArithmeticError(other)
+
+        return (self.x == other.x) and (self.y == other.y) and (self.z == other.z)
 
     def azimuth(self) -> float:
         return np.arctan2(self.y, self.x)
@@ -149,6 +158,12 @@ class Segment:
 
     def __repr__(self) -> str:
         return f"Segment({self.start}, {self.end})"
+
+    def __eq__(self, other: 'Segment') -> bool:
+        if type(other) != type(self):
+            raise GeometryArithmeticError(other)
+
+        return self.start == other.start and self.end == other.end
 
     def aod_azimuth(self) -> float:
         v = self.end - self.start
@@ -184,6 +199,12 @@ class Line:
     def __repr__(self) -> str:
         return f"Line({self.p}, {self.v})"
 
+    def __eq__(self, other: 'Line') -> bool:
+        if type(other) != type(self):
+            raise GeometryArithmeticError(other)
+
+        return self.p == other.p and self.v == other.v
+
 
 class Rectangle:
     def __init__(self, x0: float, y0: float, width: float, height: float):
@@ -215,6 +236,13 @@ class Rectangle:
 
     def __repr__(self) -> str:
         return f"Rectangle({self.x0}, {self.y0}, {self.width}, {self.height})"
+
+    def __eq__(self, other: 'Rectangle') -> bool:
+        if type(other) != type(self):
+            raise GeometryArithmeticError(other)
+
+        return self.x0 == other.x0 and self.y0 == other.y0 and \
+               self.width == other.width and self.height == other.height
 
 
 def distance(p: Point, x: Union[Point, Line, Segment]) -> float:
