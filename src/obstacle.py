@@ -83,12 +83,6 @@ class SphereObstacle(Obstacle):
         # https://www.geometrictools.com/Documentation/SphereReflections.pdf
 
         # check if a reflection is possible
-        if geom.distance(pa, self.location) <= self.radius:
-            # pa inside the sphere
-            return None
-        if geom.distance(pb, self.location) <= self.radius:
-            # pb inside the sphere
-            return None
         if self.obstructs(geom.Segment(pa, pb)):
             # pb in shadow cone of pb
             return None
@@ -124,7 +118,7 @@ class SphereObstacle(Obstacle):
                f"transmission_loss={self.transmission_loss})"
 
 
-if __name__ is '__main__':
+if __name__ == '__main__':
     s = SphereObstacle(geom.Point(0, 0, 0), 0.2)
 
     pointa = geom.Point(0, 3, 0)
