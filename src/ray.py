@@ -20,7 +20,7 @@ class Ray:
 
     @property
     def vertices(self) -> List[geom.Point]:
-        return self._vertices  # TODO deepcopy?
+        return self._vertices.copy()
 
     @vertices.setter
     def vertices(self, vertices: List[geom.Point]):
