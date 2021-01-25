@@ -22,7 +22,7 @@ class MobilityModel(ABC):
         pass
 
 
-class RandomPositionAllocation:
+class PositionAllocation:
     def __init__(self, x: Callable[[], float], y: Callable[[], float], z: Callable[[], float]):
         self._x = x
         self._y = y
@@ -60,7 +60,7 @@ class ConstantAccelerationMobilityModel(MobilityModel):
 
 
 class RandomWaypointMobilityModel(MobilityModel):
-    def __init__(self, bounding_box: Rectangle, position_allocation: RandomPositionAllocation,
+    def __init__(self, bounding_box: Rectangle, position_allocation: PositionAllocation,
                  speed_rv: Callable[[], float],
                  pause_rv: Callable[[], float], start_position: Optional[Point] = None):
         self._bounding_box = bounding_box
@@ -133,16 +133,12 @@ class WaypointMobilityModel(MobilityModel):
             self._speeds = speeds
         elif np.issubdtype(type(speeds), np.float) or np.issubdtype(type(speeds), np.integer):
             self._speeds = [float(speeds)] * (len(self._positions) - 1)
-        else:
-            raise TypeError(f"Type {type(speeds)} not supported for speeds")
 
         if isinstance(pauses, collections.Sequence):
             assert len(pauses) == len(self._positions) - 1
             self._pauses = pauses
         elif np.issubdtype(type(pauses), np.float) or np.issubdtype(type(pauses), np.integer):
             self._pauses = [float(pauses)] * (len(self._positions) - 1)
-        else:
-            raise TypeError(f"Type {type(pauses)} not supported for pauses")
 
         # Look-up table for start time of a waypoint segment
         segment_duration = [(pb - pa).length() / speed + pause
@@ -186,9 +182,9 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.WARN)
 
     rwmm = RandomWaypointMobilityModel(bounding_box=Rectangle(0, 0, 10, 10),
-                                       position_allocation=RandomPositionAllocation(lambda: np.random.uniform(0, 11),
-                                                                                    lambda: np.random.uniform(0, 11),
-                                                                                    lambda: 0),
+                                       position_allocation=PositionAllocation(lambda: np.random.uniform(0, 11),
+                                                                              lambda: np.random.uniform(0, 11),
+                                                                              lambda: 0),
                                        speed_rv=lambda: np.random.uniform(2, 6),
                                        pause_rv=lambda: np.random.uniform(2, 6),
                                        start_position=Point(0, 0, 0))
