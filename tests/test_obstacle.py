@@ -11,7 +11,6 @@ from src.obstacle import *
 from src.geometry import Point, Segment
 from src.ray import Ray
 import pytest
-import numpy as np
 
 
 def test_sphere_obstacle():
