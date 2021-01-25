@@ -24,15 +24,15 @@ class Point:
         self.coord = np.array([x, y, z])
 
     @property
-    def x(self):
+    def x(self) -> float:
         return self.coord[0]
 
     @property
-    def y(self):
+    def y(self) -> float:
         return self.coord[1]
 
     @property
-    def z(self):
+    def z(self) -> float:
         return self.coord[2]
 
     @staticmethod
@@ -40,17 +40,17 @@ class Point:
         assert len(xx) == 3, f"Invalid array: {xx}"
         return Point(xx[0], xx[1], xx[2])
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Point({self.x}, {self.y}, {self.z})"
 
-    def __add__(self, other: 'Vector'):
+    def __add__(self, other: 'Vector') -> 'Point':
         if type(other) == Vector:
             s = self.coord + other.coord
             return Point.from_array(s)
 
         raise GeometryArithmeticError(other)
 
-    def __sub__(self, other: 'Point'):
+    def __sub__(self, other: 'Point') -> 'Vector':
         if type(other) == type(self):
             diff = self.coord - other.coord
             return Vector.from_array(diff)
@@ -63,15 +63,15 @@ class Vector:
         self.coord = np.array([x, y, z])
 
     @property
-    def x(self):
+    def x(self) -> float:
         return self.coord[0]
 
     @property
-    def y(self):
+    def y(self) -> float:
         return self.coord[1]
 
     @property
-    def z(self):
+    def z(self) -> float:
         return self.coord[2]
 
     @staticmethod
@@ -79,13 +79,10 @@ class Vector:
         assert len(xx) == 3, f"Invalid array: {xx}"
         return Vector(xx[0], xx[1], xx[2])
 
-    def normalize(self) -> 'Vector':
-        return Vector.from_array(self.coord / self.length())
-
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Vector({self.x}, {self.y}, {self.z})"
 
-    def __add__(self, other: Union['Vector', Point]):
+    def __add__(self, other: Union['Vector', Point]) -> Union['Vector', Point]:
         if type(other) == type(self):
             s = self.coord + other.coord
             return Vector.from_array(s)
@@ -96,14 +93,14 @@ class Vector:
 
         raise GeometryArithmeticError(other)
 
-    def __sub__(self, other: 'Vector'):
+    def __sub__(self, other: 'Vector') -> 'Vector':
         if type(other) == type(self):
             s = self.coord - other.coord
             return Vector.from_array(s)
 
         raise GeometryArithmeticError(other)
 
-    def __mul__(self, other: Union[float, int]):
+    def __mul__(self, other: Union[float, int]) -> 'Vector':
         if np.issubdtype(type(other), np.integer) \
                 or np.issubdtype(type(other), np.float):
             other = float(other)
@@ -114,10 +111,10 @@ class Vector:
 
         raise GeometryArithmeticError(other)
 
-    def __rmul__(self, other: Union[float, int]):
+    def __rmul__(self, other: Union[float, int]) -> 'Vector':
         return self * other
 
-    def __truediv__(self, other: Union[float, int]):
+    def __truediv__(self, other: Union[float, int]) -> 'Vector':
         return self * (1 / other)
 
     def __rtruediv__(self, other):
@@ -138,16 +135,19 @@ class Vector:
     def dot(self, other: 'Vector') -> float:
         return np.dot(self.coord, other.coord).item()
 
+    def normalize(self) -> 'Vector':
+        return Vector.from_array(self.coord / self.length())
+
 
 class Segment:
     def __init__(self, start: Point, end: Point):
         self.start = start
         self.end = end
 
-    def length(self):
+    def length(self) -> float:
         return (self.end - self.start).length()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Segment({self.start}, {self.end})"
 
     def aod_azimuth(self) -> float:
@@ -177,10 +177,11 @@ class Segment:
 
 class Line:
     def __init__(self, p: Point, v: Vector):
+        assert v.length() > 0, f"v={v} is not a well-defined direction"
         self.p = p
         self.v = v
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Line({self.p}, {self.v})"
 
 
@@ -192,27 +193,27 @@ class Rectangle:
         self._height = height
 
     @property
-    def x0(self):
+    def x0(self) -> float:
         return self._x0
 
     @property
-    def y0(self):
+    def y0(self) -> float:
         return self._y0
 
     @property
-    def width(self):
+    def width(self) -> float:
         return self._width
 
     @property
-    def height(self):
+    def height(self) -> float:
         return self._height
 
-    def is_inside(self, p: Point):
+    def is_inside(self, p: Point) -> bool:
         if (self.x0 <= p.x <= self.x0 + self.width) and (self.y0 <= p.y <= self.y0 + self.height):
             return True
         return False
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Rectangle({self.x0}, {self.y0}, {self.width}, {self.height})"
 
 
