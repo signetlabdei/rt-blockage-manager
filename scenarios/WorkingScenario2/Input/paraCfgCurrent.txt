@@ -1,0 +1,4 @@
+ParameterName	ParameterValue
+numberOfNodes	2
+numberOfTimeDivisions	1
+totalNumberOfReflections	1
