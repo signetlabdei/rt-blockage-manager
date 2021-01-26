@@ -18,23 +18,33 @@ class Obstacle(ABC):
 
     @abstractmethod
     def location(self) -> geom.Point:
-        pass
+        """
+        Get location of the obstacle as a Point
+        """
 
     @abstractmethod
     def reflection_loss(self) -> float:
-        pass
+        """
+        Reflection loss [dB]
+        """
 
     @abstractmethod
     def transmission_loss(self) -> float:
-        pass
+        """
+        Transmission loss [dB]
+        """
 
     @abstractmethod
     def obstructs(self, r: Union[geom.Segment, Ray]) -> bool:
-        pass
+        """
+        Returns whether the obstacle obstructs the Segmet or Ray
+        """
 
     @abstractmethod
     def specular_reflection(self, pa: geom.Point, pb: geom.Point) -> Optional[geom.Point]:
-        pass
+        """
+        Return the single Point of specular reflection on the surface of the obstacle, given start and end points.
+        """
 
 
 class SphereObstacle(Obstacle):
@@ -105,7 +115,6 @@ class SphereObstacle(Obstacle):
         for y in filter(lambda root: root > 0, r):
             x = (-2 * c * y ** 2 + y + 1) / (2 * b * y + 1)
             if x > 0:
-                print(x, y)
                 # valid point on surface only if both x and y are >0
                 # rescale it to sphere radius
                 N = (x * S + y * L) * self.radius

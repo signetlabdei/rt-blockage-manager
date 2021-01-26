@@ -19,7 +19,9 @@ import numpy as np
 class MobilityModel(ABC):
     @abstractmethod
     def location(self, t: float) -> Point:
-        pass
+        """
+        Location Point at time t
+        """
 
 
 class PositionAllocation:
@@ -128,13 +130,13 @@ class WaypointMobilityModel(MobilityModel):
         # setup object so that speeds and pauses are lists of length len(postitions)-1
         self._positions = positions
 
-        if isinstance(speeds, collections.Sequence):
+        if isinstance(speeds, collections.abc.Sequence):
             assert len(speeds) == len(self._positions) - 1
             self._speeds = speeds
         elif np.issubdtype(type(speeds), np.float) or np.issubdtype(type(speeds), np.integer):
             self._speeds = [float(speeds)] * (len(self._positions) - 1)
 
-        if isinstance(pauses, collections.Sequence):
+        if isinstance(pauses, collections.abc.Sequence):
             assert len(pauses) == len(self._positions) - 1
             self._pauses = pauses
         elif np.issubdtype(type(pauses), np.float) or np.issubdtype(type(pauses), np.integer):
