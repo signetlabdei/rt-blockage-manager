@@ -46,3 +46,26 @@ def test_ray_aoa_aod():
     assert r.aoa_azimuth() == pytest.approx(np.pi)
     assert r.aoa_elevation() == pytest.approx(0)
     assert r.aoa_inclination() == pytest.approx(np.pi / 2)
+
+
+def test_refl_order():
+    r = Ray(delay=10e-9,
+            path_gain=80,
+            phase=0,
+            vertices=[Point(0, 0, 1.5), Point(10, 0, 1.5)])
+
+    assert r.refl_order() == 0
+
+    r.vertices = r.vertices + [Point(10, 10, 1.5)]
+    assert r.refl_order() == 1
+
+
+def test_is_direct():
+    r = Ray(delay=10e-9,
+            path_gain=80,
+            phase=0,
+            vertices=[Point(0, 0, 1.5), Point(10, 0, 1.5)])
+    assert r.is_direct()
+
+    r.vertices = r.vertices + [Point(10, 10, 1.5)]
+    assert not r.is_direct()

@@ -27,6 +27,12 @@ class Ray:
         assert len(vertices) >= 2, "Vertices do should also include origin and destination"
         self._vertices = vertices
 
+    def refl_order(self) -> int:
+        return len(self.vertices) - 2
+
+    def is_direct(self) -> bool:
+        return self.refl_order() == 0
+
     def aod_azimuth(self) -> float:
         s = geom.Segment(self.vertices[0], self.vertices[1])
         return s.aod_azimuth()
