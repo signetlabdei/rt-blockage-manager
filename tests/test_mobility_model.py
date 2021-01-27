@@ -7,8 +7,10 @@
 # 
 # Date: January 2021
 
-from src.mobility_model import *
-from src.geometry import distance
+from src.mobility_model import PositionAllocation, ConstantPositionMobilityModelModel, ConstantVelocityMobilityModel
+from src.mobility_model import ConstantAccelerationMobilityModel, RandomWaypointMobilityModel, WaypointMobilityModel
+from src.geometry import Point, Vector, distance, Rectangle
+import numpy as np
 import pytest
 
 
@@ -91,23 +93,16 @@ def test_waypoint_mobility_model():
 def test_waypoint_mobility_fails():
     # Invalid number of speeds
     try:
-        mm = WaypointMobilityModel([Point(0, 0, 0), Point(10, 0, 0), Point(10, 10, 0), Point(0, 10, 0), Point(0, 0, 0)],
-                                   speeds=[2, 1],
-                                   pauses=2)
+        WaypointMobilityModel([Point(0, 0, 0), Point(10, 0, 0), Point(10, 10, 0), Point(0, 10, 0), Point(0, 0, 0)],
+                              speeds=[2, 1],
+                              pauses=2)
     except Exception as e:
         assert type(e) == AssertionError
 
     # Invalid number of pauses
     try:
-        mm = WaypointMobilityModel([Point(0, 0, 0), Point(10, 0, 0), Point(10, 10, 0), Point(0, 10, 0), Point(0, 0, 0)],
-                                   speeds=2,
-                                   pauses=[2, 1])
+        WaypointMobilityModel([Point(0, 0, 0), Point(10, 0, 0), Point(10, 10, 0), Point(0, 10, 0), Point(0, 0, 0)],
+                              speeds=2,
+                              pauses=[2, 1])
     except Exception as e:
         assert type(e) == AssertionError
-
-
-def test_waypoint_mobility_input_lists():
-    wp = [Point(0, 0, 0), Point(10, 0, 0), Point(10, 10, 0), Point(0, 10, 0), Point(0, 0, 0)]
-    mm = WaypointMobilityModel(wp,
-                               speeds=[2] * (len(wp) - 1),
-                               pauses=[2] * (len(wp) - 1))

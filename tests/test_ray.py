@@ -7,7 +7,7 @@
 # 
 # Date: January 2021
 
-from src.ray import *
+from src.ray import Ray
 from src.geometry import Point
 import pytest
 import numpy as np

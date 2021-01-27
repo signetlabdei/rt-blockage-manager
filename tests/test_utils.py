@@ -7,7 +7,7 @@
 # 
 # Date: January 2021
 
-from src.utils import *
+from src.utils import isint, isfloat
 import pytest
 
 

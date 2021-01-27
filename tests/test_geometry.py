@@ -7,7 +7,7 @@
 # 
 # Date: January 2021
 
-from src.geometry import *
+from src.geometry import GeometryArithmeticError, Vector, Point, Segment, Line, Rectangle, distance, project
 import pytest
 import numpy as np
 

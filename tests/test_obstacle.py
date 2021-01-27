@@ -7,7 +7,7 @@
 # 
 # Date: January 2021
 
-from src.obstacle import *
+from src.obstacle import SphereObstacle
 from src.geometry import Point, Segment
 from src.ray import Ray
 import pytest
