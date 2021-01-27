@@ -122,7 +122,7 @@ class SphereObstacle(Obstacle):
                 # Return point in space
                 return self.location + N
 
-        raise ArithmeticError("Specular reflection not found")
+        raise ArithmeticError("Specular reflection not found")  # pragma: no cover
 
     def __repr__(self):
         return f"SphereObstacle({self.location}, {self.radius}, reflection_loss={self.reflection_loss}, " \

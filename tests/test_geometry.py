@@ -85,10 +85,8 @@ def test_vector_add():
     assert (p_sum - p_expected).length() == pytest.approx(0)
 
     # Vector + anything: error
-    try:
+    with pytest.raises(GeometryArithmeticError):
         v + 1
-    except Exception as e:
-        assert type(e) == GeometryArithmeticError
 
 
 def test_vector_sub():
@@ -100,10 +98,8 @@ def test_vector_sub():
     assert (v - v_expected).length() == pytest.approx(0)
 
     # Vector - anything: error
-    try:
+    with pytest.raises(GeometryArithmeticError):
         v - 1
-    except Exception as e:
-        assert type(e) == GeometryArithmeticError
 
 
 def test_vector_mul():
@@ -115,10 +111,8 @@ def test_vector_mul():
     assert (v - v_expected).length() == pytest.approx(0)
 
     # Vector * Vector: error
-    try:
+    with pytest.raises(GeometryArithmeticError):
         v * v
-    except Exception as e:
-        assert type(e) == GeometryArithmeticError
 
 
 def test_vector_rmul():
@@ -147,10 +141,8 @@ def test_vector_eq():
     assert v1 == v2
 
     # Vector == Point: error
-    try:
+    with pytest.raises(GeometryArithmeticError):
         v1 == Point(1, 2, 3)
-    except Exception as e:
-        assert type(e) == GeometryArithmeticError
 
 
 @pytest.mark.parametrize("v,az,el,incl", [(Vector(1, 0, 0), 0, 0, np.pi / 2),
@@ -198,10 +190,8 @@ def test_point_sub():
     assert (v - v_expected).length() == pytest.approx(0)
 
     # Point - anything: error
-    try:
+    with pytest.raises(GeometryArithmeticError):
         p1 - 1
-    except Exception as e:
-        assert type(e) == GeometryArithmeticError
 
 
 def test_point_add():
@@ -215,10 +205,8 @@ def test_point_add():
     assert (p2 - p_expected).length() == pytest.approx(0)
 
     # Point + Point: error
-    try:
+    with pytest.raises(GeometryArithmeticError):
         p + p
-    except Exception as e:
-        assert type(e) == GeometryArithmeticError
 
 
 def test_point_eq():
@@ -228,10 +216,8 @@ def test_point_eq():
     assert p1 == p2
 
     # Point == Vector: error
-    try:
+    with pytest.raises(GeometryArithmeticError):
         p1 == Vector(1, 2, 3)
-    except Exception as e:
-        assert type(e) == GeometryArithmeticError
 
 
 # Segment
@@ -266,10 +252,8 @@ def test_segment_eq():
     assert s1 == s2
 
     # Segment == anything: error
-    try:
+    with pytest.raises(GeometryArithmeticError):
         s1 == p1
-    except Exception as e:
-        assert type(e) == GeometryArithmeticError
 
 
 @pytest.mark.parametrize("s,aod_az,aod_el,aod_incl,aoa_az,aoa_el,aoa_incl",
@@ -310,10 +294,8 @@ def test_line_eq():
     assert l1 == l2
 
     # Line == anything: error
-    try:
+    with pytest.raises(GeometryArithmeticError):
         l1 == v
-    except Exception as e:
-        assert type(e) == GeometryArithmeticError
 
 
 # Rectangle
@@ -336,10 +318,8 @@ def test_rectangle_eq():
     assert r1 == r2
 
     # Rectangle == anything: error
-    try:
+    with pytest.raises(GeometryArithmeticError):
         r1 == 1
-    except Exception as e:
-        assert type(e) == GeometryArithmeticError
 
 
 @pytest.mark.parametrize("p,inside",
@@ -393,7 +373,5 @@ def test_distance():
     assert distance(p, s) == pytest.approx((p - Point(0, 1, 0)).length())
 
     # Distance with anything else: error
-    try:
+    with pytest.raises(TypeError):
         distance(p, Vector(0, 0, 0))
-    except Exception as e:
-        assert type(e) == TypeError

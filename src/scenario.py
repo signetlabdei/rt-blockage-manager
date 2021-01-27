@@ -152,4 +152,4 @@ class QdRealizationScenario(Scenario):
             # Return list of Ray for given tx/rx pair at given time step
             return self._channel[tx][rx][t]
 
-        raise ValueError(f"Invalid arguments: tx={tx}, rx={rx}, t={t}")
+        raise ValueError(f"Invalid arguments: tx={tx}, rx={rx}, t={t}")  # pragma: no cover

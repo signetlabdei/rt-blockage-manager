@@ -41,11 +41,8 @@ def test_get_channel():
     assert type(ch[0][1][0][0]) == Ray
 
     # Fail to request self-channel
-    try:
+    with pytest.raises(AssertionError):
         s.get_channel(0, 0)
-        assert False
-    except Exception as e:
-        assert type(e) == AssertionError
 
     # Get all time steps for node pair
     ch = s.get_channel(0, 1)

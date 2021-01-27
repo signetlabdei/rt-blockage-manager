@@ -92,17 +92,20 @@ def test_waypoint_mobility_model():
 
 def test_waypoint_mobility_fails():
     # Invalid number of speeds
-    try:
+    with pytest.raises(AssertionError):
         WaypointMobilityModel([Point(0, 0, 0), Point(10, 0, 0), Point(10, 10, 0), Point(0, 10, 0), Point(0, 0, 0)],
                               speeds=[2, 1],
                               pauses=2)
-    except Exception as e:
-        assert type(e) == AssertionError
 
     # Invalid number of pauses
-    try:
+    with pytest.raises(AssertionError):
         WaypointMobilityModel([Point(0, 0, 0), Point(10, 0, 0), Point(10, 10, 0), Point(0, 10, 0), Point(0, 0, 0)],
                               speeds=2,
                               pauses=[2, 1])
-    except Exception as e:
-        assert type(e) == AssertionError
+
+
+def test_waypoint_mobility_sequence_input():
+    # Invalid number of speeds
+    WaypointMobilityModel([Point(0, 0, 0), Point(10, 0, 0), Point(10, 10, 0), Point(0, 10, 0), Point(0, 0, 0)],
+                          speeds=[2, 2, 2, 2],
+                          pauses=[2, 2, 2, 2])

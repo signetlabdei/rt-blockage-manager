@@ -94,7 +94,7 @@ class RandomWaypointMobilityModel(MobilityModel):
             return self._pb
 
         raise RuntimeError(f"RandomWaypointMobilityModel is in an unexpected state: dt={dt}, "
-                           f"t_to_next_waypoint={t_to_next_waypoint}, pause={self._pause}")
+                           f"t_to_next_waypoint={t_to_next_waypoint}, pause={self._pause}")  # pragma: no cover
 
     def _update_waypoint(self, update_time: float, start_position: Optional[Point] = None):
         if start_position is None:
@@ -174,7 +174,7 @@ class WaypointMobilityModel(MobilityModel):
             return pb
 
         raise RuntimeError(f"WaypointMobilityModel is in an unexpected state: dt={dt}, "
-                           f"t_to_next_waypoint={t_to_next_waypoint}, pause={pause}")
+                           f"t_to_next_waypoint={t_to_next_waypoint}, pause={pause}")  # pragma: no cover
 
     def max_mobility_duration(self):
         return self._start_time_pos[-1]
