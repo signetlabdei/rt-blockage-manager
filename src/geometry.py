@@ -8,7 +8,7 @@
 # Date: January 2021
 
 import numpy as np
-from typing import Tuple, Union, Sequence
+from typing import Tuple, Union, Sequence, overload
 
 
 class GeometryArithmeticError(Exception):
@@ -87,6 +87,14 @@ class Vector:
 
     def __repr__(self) -> str:
         return f"Vector({self.x}, {self.y}, {self.z})"
+
+    @overload
+    def __add__(self, other: 'Vector') -> 'Vector':
+        ...
+
+    @overload
+    def __add__(self, other: Point) -> Point:
+        ...
 
     def __add__(self, other: Union['Vector', Point]) -> Union['Vector', Point]:
         if type(other) == type(self):
