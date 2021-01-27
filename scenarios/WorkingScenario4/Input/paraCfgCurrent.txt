@@ -2,3 +2,5 @@ ParameterName	ParameterValue
 numberOfNodes	2
 numberOfTimeDivisions	5
 totalNumberOfReflections	1
+totalTimeDuration	1
+carrierFrequency	60e9
