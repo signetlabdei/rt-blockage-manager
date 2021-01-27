@@ -7,7 +7,7 @@
 # 
 # Date: January 2021
 
-from typing import TextIO, List, Dict
+from typing import TextIO, List, Dict, Optional
 from src.geometry import Point
 from src.ray import Ray
 from src import utils
@@ -145,26 +145,26 @@ def import_parameter_configuration(scenario_path: str) -> Dict:
     return cfg
 
 
-def import_scenario(scenario_path: str):  # TODO return List of List with the principal diagonal of None
+def import_scenario(scenario_path: str) -> List[List[Optional[List[List[Ray]]]]]:
     assert os.path.isdir(scenario_path), f"scenario_path={scenario_path} not found"
     cfg = import_parameter_configuration(scenario_path)
 
     # prepare list-matrix (n_nodes x n_nodes) with pointers to channel lists
     n_nodes = cfg['numberOfNodes']
-    channels = [[None for _ in range(n_nodes)] for _ in range(n_nodes)]
+    channels = [[[] for _ in range(n_nodes)] for _ in range(n_nodes)]
 
     for tx in range(n_nodes):
         for rx in range(n_nodes):
             if tx == rx:
                 # no channel to itself
-                continue
-
-            rays = import_rays(scenario_path=scenario_path,
-                               max_refl=cfg['totalNumberOfReflections'],
-                               tx=tx,
-                               rx=rx)
-            assert len(rays) == cfg['numberOfTimeDivisions'], \
-                f"Expected {cfg['numberOfTimeDivisions']}, found {len(rays)}, instead"
+                rays = None
+            else:
+                rays = import_rays(scenario_path=scenario_path,
+                                   max_refl=cfg['totalNumberOfReflections'],
+                                   tx=tx,
+                                   rx=rx)
+                assert len(rays) == cfg['numberOfTimeDivisions'], \
+                    f"Expected {cfg['numberOfTimeDivisions']}, found {len(rays)}, instead"
 
             channels[tx][rx] = rays
 
