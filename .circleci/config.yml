@@ -40,4 +40,7 @@ jobs:
       - run:
           name: Run tests
           # This assumes pytest is installed via the install-package step above
-          command: pytest
+          command: pytest --cov --cov-report=html
+      - store_artifacts: # store html coverage report as an artifact
+          path: htmlcov
+
