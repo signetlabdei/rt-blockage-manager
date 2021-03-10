@@ -8,7 +8,6 @@
 # Date: January 2021
 
 from abc import ABC, abstractmethod
-import math
 from typing import Optional, Union, List, overload
 import src.qd_realization_io as qdio
 from src.ray import Ray
