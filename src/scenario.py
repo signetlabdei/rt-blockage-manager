@@ -44,14 +44,17 @@ class Scenario(ABC):
         Return the operating frequency of the scenario
         """
 
+    @abstractmethod
     @overload
     def get_channel(self) -> List[List[Optional[List[List[Ray]]]]]:
         ...
 
+    @abstractmethod
     @overload
     def get_channel(self, tx: int, rx: int) -> List[List[Ray]]:
         ...
 
+    @abstractmethod
     @overload
     def get_channel(self, tx: int, rx: int, t: int) -> List[Ray]:
         ...
