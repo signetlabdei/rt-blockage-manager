@@ -14,25 +14,26 @@ import pytest
 
 
 def test_sphere_obstacle():
-    o = SphereObstacle(location=Point(0, 0, 0),
+    o = SphereObstacle(center=Point(0, 0, 0),
                        radius=10,
                        reflection_loss=20,
                        transmission_loss=30)
-    assert o.location == Point(0, 0, 0)
+    assert o.center == Point(0, 0, 0)
+    assert o.center == o.location()
     assert o.radius == 10
-    assert o.reflection_loss == 20
-    assert o.transmission_loss == 30
+    assert o.reflection_loss() == 20
+    assert o.transmission_loss() == 30
 
     # check repr string
     o_repr = eval(str(o))
-    assert o.location == o_repr.location
+    assert o.center == o_repr.center
     assert o.radius == o_repr.radius
-    assert o.reflection_loss == o_repr.reflection_loss
-    assert o.transmission_loss == o_repr.transmission_loss
+    assert o.reflection_loss() == o_repr.reflection_loss()
+    assert o.transmission_loss() == o_repr.transmission_loss()
 
 
 def test_sphere_obstacle_obstructs():
-    o = SphereObstacle(location=Point(0, 0, 0),
+    o = SphereObstacle(center=Point(0, 0, 0),
                        radius=5)
 
     # Point inside sphere: should be obstructed as obstacle is assumed to be solid
@@ -52,7 +53,7 @@ def test_sphere_obstacle_obstructs():
 
 
 def test_sphere_obstacle_specular_reflection():
-    o = SphereObstacle(location=Point(0, 0, 0),
+    o = SphereObstacle(center=Point(0, 0, 0),
                        radius=5)
 
     # Invalid points (pa inside sphere): no reflection

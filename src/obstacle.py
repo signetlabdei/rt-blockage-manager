@@ -49,41 +49,42 @@ class Obstacle(ABC):
 
 class SphereObstacle(Obstacle):
     def __init__(self,
-                 location: geom.Point,
+                 center: geom.Point,
                  radius: float,
                  reflection_loss=np.inf,
                  transmission_loss=np.inf):
-        self._location = location
+        self._center = center
         self._radius = radius
         self._reflection_loss = reflection_loss
         self._transmission_loss = transmission_loss
 
     @property
-    def location(self):
-        return self._location
+    def center(self):
+        return self._center
 
     @property
     def radius(self):
         return self._radius
 
-    @property
+    def location(self):
+        return self.center
+
     def reflection_loss(self):
         return self._reflection_loss
 
-    @property
     def transmission_loss(self):
         return self._transmission_loss
 
     def obstructs(self, r: Union[geom.Segment, Ray]) -> bool:
         if type(r) is geom.Segment:
-            d = geom.distance(self.location, r)
+            d = geom.distance(self.center, r)
             if d < self.radius:
                 return True
 
         elif type(r) is Ray:
             for p1, p2 in zip(r.vertices[:-1], r.vertices[1:]):
                 segment = geom.Segment(p1, p2)
-                d = geom.distance(self.location, segment)
+                d = geom.distance(self.center, segment)
                 if d < self.radius:
                     return True
 
@@ -98,8 +99,8 @@ class SphereObstacle(Obstacle):
             return None
 
         # Use the center of the sphere as the origin
-        L = pa - self.location
-        S = pb - self.location
+        L = pa - self.center
+        S = pb - self.center
 
         a = S.dot(S)
         b = S.dot(L)
@@ -120,13 +121,13 @@ class SphereObstacle(Obstacle):
                 N = (x * S + y * L) * self.radius
 
                 # Return point in space
-                return self.location + N
+                return self.center + N
 
         raise ArithmeticError("Specular reflection not found")  # pragma: no cover
 
     def __repr__(self):
-        return f"SphereObstacle({self.location}, {self.radius}, reflection_loss={self.reflection_loss}, " \
-               f"transmission_loss={self.transmission_loss})"
+        return f"SphereObstacle({self.center}, {self.radius}, reflection_loss={self._reflection_loss}, " \
+               f"transmission_loss={self._transmission_loss})"
 
 
 if __name__ == '__main__':
