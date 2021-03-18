@@ -56,3 +56,19 @@ class Ray:
     def aoa_elevation(self) -> float:
         s = geom.Segment(self.vertices[-2], self.vertices[-1])
         return s.aoa_elevation()
+
+    def __eq__(self, o: 'Ray') -> bool:
+        if self.delay != o.delay:
+            return False
+        if self.path_gain != o.path_gain:
+            return False
+        if self.phase != o.phase:
+            return False
+        
+        if len(self.vertices) != len(o.vertices):
+            return False
+        for sv, ov in zip(self._vertices, o._vertices):
+            if sv != ov:
+                return False
+            
+        return True
