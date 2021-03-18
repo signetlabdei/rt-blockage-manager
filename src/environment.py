@@ -7,10 +7,12 @@
 # 
 # Date: January 2021
 
-from src.scenario import Scenario
-from src.obstacle import Obstacle
+from src.geometry import Point
+import numpy as np
+from src.scenario import QdRealizationScenario, Scenario
+from src.obstacle import Obstacle, SphereObstacle
 from src.ray import Ray
-from typing import Sequence
+from typing import Sequence, List
 
 
 class Environment:
@@ -27,14 +29,26 @@ class Environment:
                     continue
 
                 time_steps = self._scenario.get_channel(tx, rx)
+                new_time_steps: List[List[Ray]] = []
                 # TODO need to update obstacle mobility at each time step
                 for rays in time_steps:
+                    new_rays: List[Ray] = [] # new list of rays
                     for ray in rays:
-                        self._process_ray(ray)  # TODO is this modified (deleted) in-place?
+                        new_rays += self._process_ray(ray)
                         # TODO when creating diffracted/reflected rays from obstacles, need to check if other obstacles
                         #  obstruct them
+                    new_time_steps.append(new_rays) # TODO check if correct
+                
+                self._scenario.set_channel(tx, rx, new_time_steps)
 
-    def _process_ray(self, ray: Ray):
+    def _process_ray(self, ray: Ray) -> List[Ray]:
+        # TODO setup flexible ray processing: choose whether to consider obstructions, reflections, diffractions, diffusion, etc.
         for obs in self._obstacles:
             if obs.obstructs(ray):
                 ray.path_gain -= obs.transmission_loss()
+        
+        if ray.path_gain > -np.inf:
+            return [ray]
+        else:
+            # Automatically remove ray if insignificant
+            return []
