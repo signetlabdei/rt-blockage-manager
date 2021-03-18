@@ -76,6 +76,12 @@ class Scenario(ABC):
         - (self: Scenario, tx: int, rx: int, t: int) -> List[Ray]:
         Return the list of Ray for the requested channel instance.
         """
+    
+    @abstractmethod
+    def set_channel(self, tx: int, rx: int, t: List[List[Ray]]) -> None:
+        """
+        Set or update the existing channel
+        """
 
 
 class QdRealizationScenario(Scenario):
@@ -155,3 +161,13 @@ class QdRealizationScenario(Scenario):
             return self._channel[tx][rx][t]
 
         raise ValueError(f"Invalid arguments: tx={tx}, rx={rx}, t={t}")  # pragma: no cover
+
+
+    def set_channel(self, tx: int, rx: int, t: List[List[Ray]]) -> None:
+        assert 0 <= tx < self.get_num_nodes(), f"Invalid tx index ({tx}) for scenario with {self.get_num_nodes()} nodes"
+        assert 0 <= rx < self.get_num_nodes(), f"Invalid rx index ({rx}) for scenario with {self.get_num_nodes()} nodes"
+        assert tx != rx, f"Invalid query for self-channel"
+        if self._channel:
+            assert len(t) == len(self._channel[tx][rx]), f"Invalid {len(t)=}: should be {len(self._channel[tx][rx])}"
+
+        self._channel[tx][rx] = t
