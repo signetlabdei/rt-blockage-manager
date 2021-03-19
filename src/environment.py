@@ -31,19 +31,22 @@ class Environment:
                 time_steps = self._scenario.get_channel(tx, rx)
                 new_time_steps: List[List[Ray]] = []
                 # TODO need to update obstacle mobility at each time step
-                for rays in time_steps:
+                for tidx, rays in enumerate(time_steps):
+                    t = tidx * self._scenario.get_time_step_duration()
+
                     new_rays: List[Ray] = [] # new list of rays
                     for ray in rays:
-                        new_rays += self._process_ray(ray)
+                        new_rays += self._process_ray(ray, t)
                         # TODO when creating diffracted/reflected rays from obstacles, need to check if other obstacles
                         #  obstruct them
                     new_time_steps.append(new_rays) # TODO check if correct
                 
                 self._scenario.set_channel(tx, rx, new_time_steps)
 
-    def _process_ray(self, ray: Ray) -> List[Ray]:
+    def _process_ray(self, ray: Ray, t: float) -> List[Ray]:
         # TODO setup flexible ray processing: choose whether to consider obstructions, reflections, diffractions, diffusion, etc.
         for obs in self._obstacles:
+            obs.update(t)
             if obs.obstructs(ray):
                 ray.path_gain -= obs.transmission_loss()
         
