@@ -7,7 +7,7 @@
 # 
 # Date: January 2021
 
-from src.mobility_model import PositionAllocation, ConstantPositionMobilityModelModel, ConstantVelocityMobilityModel
+from src.mobility_model import PositionAllocation, ConstantPositionMobilityModel, ConstantVelocityMobilityModel
 from src.mobility_model import ConstantAccelerationMobilityModel, RandomWaypointMobilityModel, WaypointMobilityModel
 from src.geometry import Point, Vector, distance, Rectangle
 import numpy as np
@@ -27,8 +27,10 @@ def test_position_allocation():
 # ConstantPositionMobilityModel
 def test_constant_position_mobility_model():
     p = Point(1, 2, 3)
-    mm = ConstantPositionMobilityModelModel(p)
+    mm = ConstantPositionMobilityModel(p)
     assert mm.location(0) == p
+
+    eval(str(mm)) # test repr
 
 
 # ConstantVelocityMobilityModel
@@ -40,6 +42,8 @@ def test_constant_velocity_mobility_model():
     assert mm.location(1) == p + v
     assert mm.location(10) == p + 10 * v
 
+    eval(str(mm))  # test repr
+
 
 # ConstantAccelerationMobilityModel
 def test_constant_acceleration_mobility_model():
@@ -50,6 +54,8 @@ def test_constant_acceleration_mobility_model():
     assert mm.location(0) == p
     assert mm.location(1) == p + v + 0.5 * a
     assert mm.location(10) == p + 10 * v + 0.5 * 10 ** 2 * a
+
+    eval(str(mm))  # test repr
 
 
 # RandomWaypointMobilityModel

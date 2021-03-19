@@ -34,12 +34,15 @@ class PositionAllocation:
         return Point(self._x(), self._y(), self._z())
 
 
-class ConstantPositionMobilityModelModel(MobilityModel):
+class ConstantPositionMobilityModel(MobilityModel):
     def __init__(self, pos: Point):
         self._pos = pos
 
     def location(self, t: float) -> Point:
         return self._pos
+
+    def __repr__(self) -> str:
+        return f"ConstantPositionMobilityModel({self._pos})"
 
 
 class ConstantVelocityMobilityModel(MobilityModel):
@@ -50,6 +53,9 @@ class ConstantVelocityMobilityModel(MobilityModel):
     def location(self, t: float) -> Point:
         return self._start_pos + t * self._vel
 
+    def __repr__(self) -> str:
+        return f"ConstantVelocityMobilityModel({self._start_pos},{self._vel})"
+
 
 class ConstantAccelerationMobilityModel(MobilityModel):
     def __init__(self, start_pos: Point, vel: Vector, accel: Vector):
@@ -59,6 +65,9 @@ class ConstantAccelerationMobilityModel(MobilityModel):
 
     def location(self, t: float) -> Point:
         return self._start_pos + t * self._vel + 0.5 * t ** 2 * self._accel
+
+    def __repr__(self) -> str:
+        return f"ConstantAccelerationMobilityModel({self._start_pos},{self._vel},{self._accel})"
 
 
 class RandomWaypointMobilityModel(MobilityModel):
