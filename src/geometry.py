@@ -151,7 +151,7 @@ class Vector:
         return np.linalg.norm(self.coord)
 
     def dot(self, other: 'Vector') -> float:
-        return np.dot(self.coord, other.coord).item()
+        return float(np.dot(self.coord, other.coord)) # type: ignore
 
     def normalize(self) -> 'Vector':
         return Vector.from_array(self.coord / self.length())
