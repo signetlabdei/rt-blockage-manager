@@ -33,12 +33,12 @@ def test_get_channel():
 
     # Get all channels
     ch = s.get_channel()
-    assert type(ch) == list  # txs
-    assert type(ch[0]) == list  # rxs
+    assert isinstance(ch, list)  # txs
+    assert isinstance(ch[0], list)  # rxs
     assert ch[0][0] is None  # self-channel
-    assert type(ch[0][1]) == list  # time steps
-    assert type(ch[0][1][0]) == list  # rays
-    assert type(ch[0][1][0][0]) == Ray
+    assert isinstance(ch[0][1], list)  # time steps
+    assert isinstance(ch[0][1][0], list)  # rays
+    assert isinstance(ch[0][1][0][0], Ray)
 
     # Fail to request self-channel
     with pytest.raises(AssertionError):
@@ -46,11 +46,12 @@ def test_get_channel():
 
     # Get all time steps for node pair
     ch = s.get_channel(0, 1)
-    assert type(ch) == list  # time steps
-    assert type(ch[0]) == list  # rays
-    assert type(ch[0][0]) == Ray
+    assert isinstance(ch, list)  # time steps
+    assert isinstance(ch[0], list)  # rays
+    assert isinstance(ch[0][0], Ray)
 
     # Get rays for node pair at given time
     ch = s.get_channel(0, 1, 0)
-    assert type(ch) == list  # rays
-    assert type(ch[0]) == Ray
+    assert isinstance(ch, list)  # rays
+    assert isinstance(ch[0], Ray)
+    

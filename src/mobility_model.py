@@ -10,7 +10,7 @@
 from abc import ABC, abstractmethod
 from src.geometry import Point, Vector, Rectangle
 from typing import Optional, Callable, Sequence, Union
-import collections
+from collections.abc import Sequence as SequenceAbc
 import logging
 
 import numpy as np
@@ -139,13 +139,13 @@ class WaypointMobilityModel(MobilityModel):
         # setup object so that speeds and pauses are lists of length len(postitions)-1
         self._positions = positions
 
-        if isinstance(speeds, collections.abc.Sequence):
+        if isinstance(speeds, SequenceAbc):
             assert len(speeds) == len(self._positions) - 1
             self._speeds = speeds
         elif np.issubdtype(type(speeds), np.float) or np.issubdtype(type(speeds), np.integer):
             self._speeds = [float(speeds)] * (len(self._positions) - 1)
 
-        if isinstance(pauses, collections.abc.Sequence):
+        if isinstance(pauses, SequenceAbc):
             assert len(pauses) == len(self._positions) - 1
             self._pauses = pauses
         elif np.issubdtype(type(pauses), np.float) or np.issubdtype(type(pauses), np.integer):

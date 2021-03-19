@@ -1,13 +1,13 @@
 # AUTHOR(S):
 # Mattia Lecci <mattia.lecci@dei.unipd.it>
-# 
+#
 # University of Padova (UNIPD), Italy
-# Information Engineering Department (DEI) 
+# Information Engineering Department (DEI)
 # SIGNET Research Group @ http://signet.dei.unipd.it/
-# 
+#
 # Date: January 2021
 
-from typing import TextIO, List, Dict, Optional
+from typing import TextIO, List, Dict, Optional, Union
 from src.geometry import Point
 from src.ray import Ray
 from src import utils
@@ -19,7 +19,8 @@ def _get_next_row_floats(file: TextIO, n_rays: int) -> List[float]:
     assert line != '', f"Unexpected EOF for file {file.name}"
 
     floats = [float(x) for x in line.split(',')]
-    assert len(floats) == n_rays, f"Expected {n_rays} entries, found {len(floats)}"
+    assert len(
+        floats) == n_rays, f"Expected {n_rays} entries, found {len(floats)}"
 
     return floats
 
@@ -31,19 +32,17 @@ def import_qd_file(path: str) -> List[Dict]:
         qd_file = []
         while line != '':  # EOF='' in python
             n_rays = int(line)
+            rays: Dict[str, Union[int, List[float]]] = {'n_rays': n_rays}
 
             if n_rays > 0:
-                rays = {'delay': _get_next_row_floats(f, n_rays),
+                rays = {**rays,  # add to dict
+                        'delay': _get_next_row_floats(f, n_rays),
                         'path_gain': _get_next_row_floats(f, n_rays),
                         'phase_offset': _get_next_row_floats(f, n_rays),
                         'aod_el': _get_next_row_floats(f, n_rays),
                         'aod_az': _get_next_row_floats(f, n_rays),
                         'aoa_el': _get_next_row_floats(f, n_rays),
                         'aoa_az': _get_next_row_floats(f, n_rays)}
-            else:
-                rays = {}
-
-            rays['n_rays'] = n_rays
 
             qd_file.append(rays)
 
@@ -55,7 +54,8 @@ def import_qd_file(path: str) -> List[Dict]:
 
 def _get_vertices_from_csv_string(line: str) -> List[Point]:
     coords = [float(x) for x in line.split(',')]
-    assert len(coords) % 3 == 0, f"Line must have a multiple of 3 coordinates, found {len(coords)}, instead"
+    assert len(
+        coords) % 3 == 0, f"Line must have a multiple of 3 coordinates, found {len(coords)}, instead"
 
     # The string is expected to be formatted as "x1,y1,z1,x2,y2,z2,...,xn,yn,zn"
     vertices = [Point(x, y, z)
@@ -80,7 +80,8 @@ def import_mpc_coordinates(path: str) -> List[List[Point]]:
 
 def import_rays(scenario_path: str, max_refl: int, tx: int, rx: int) -> List[List[Ray]]:
     qd_file_folder = os.path.join(scenario_path, "Output/Ns3/QdFiles")
-    mpc_coords_folder = os.path.join(scenario_path, "Output/Visualizer/MpcCoordinates")
+    mpc_coords_folder = os.path.join(
+        scenario_path, "Output/Visualizer/MpcCoordinates")
 
     # Import QdFile
     qd_file_name = f"Tx{tx}Rx{rx}.txt"
@@ -96,7 +97,8 @@ def import_rays(scenario_path: str, max_refl: int, tx: int, rx: int) -> List[Lis
             mpc_coords_file_name = f"MpcTx{min(tx, rx)}Rx{max(tx, rx)}Refl{refl}Trc{t}.csv"
 
             try:
-                mpc_coords = import_mpc_coordinates(os.path.join(mpc_coords_folder, mpc_coords_file_name))
+                mpc_coords = import_mpc_coordinates(
+                    os.path.join(mpc_coords_folder, mpc_coords_file_name))
 
                 for vertices in mpc_coords:
                     if tx > rx:
@@ -111,7 +113,8 @@ def import_rays(scenario_path: str, max_refl: int, tx: int, rx: int) -> List[Lis
                 # if the mpc coordinate is not found, just ignore it
                 pass
 
-        assert len(rays) == qd_step['n_rays'], f"Expected {qd_step['n_rays']} rays, found {len(rays)} MPC coordinates"
+        assert len(
+            rays) == qd_step['n_rays'], f"Expected {qd_step['n_rays']} rays, found {len(rays)} MPC coordinates"
         time_steps.append(rays)
 
     return time_steps
@@ -146,12 +149,14 @@ def import_parameter_configuration(scenario_path: str) -> Dict:
 
 
 def import_scenario(scenario_path: str) -> List[List[Optional[List[List[Ray]]]]]:
-    assert os.path.isdir(scenario_path), f"scenario_path={scenario_path} not found"
+    assert os.path.isdir(
+        scenario_path), f"scenario_path={scenario_path} not found"
     cfg = import_parameter_configuration(scenario_path)
 
     # prepare list-matrix (n_nodes x n_nodes) with pointers to channel lists
     n_nodes = cfg['numberOfNodes']
-    channels = [[[] for _ in range(n_nodes)] for _ in range(n_nodes)]
+    channels: List[List[Optional[List[List[Ray]]]]] = [[[] for _ in range(n_nodes)]
+                                                       for _ in range(n_nodes)]
 
     for tx in range(n_nodes):
         for rx in range(n_nodes):

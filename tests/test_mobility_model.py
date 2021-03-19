@@ -70,8 +70,7 @@ def test_random_waypoint_mobility_model():
     # Just check location at 100 consecutive time steps
     for t in range(0, 100, 1):
         p = mm.location(t)
-
-    assert type(p) == Point
+        assert type(p) == Point
 
 
 # WaypointMobilityModel

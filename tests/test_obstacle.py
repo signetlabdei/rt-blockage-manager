@@ -59,7 +59,7 @@ def test_sphere_obstacle_obstructs():
 
     # Type error
     with pytest.raises(TypeError):
-        o.obstructs(0)
+        o.obstructs(0) # type: ignore
 
 
 def test_sphere_obstacle_specular_reflection():

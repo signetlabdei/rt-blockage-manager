@@ -7,6 +7,7 @@
 #
 # Date: January 2021
 
+from src.ray import Ray
 from src.geometry import Point
 from src.obstacle import SphereObstacle
 from src.scenario import QdRealizationScenario
@@ -67,6 +68,7 @@ def test_environment_imprefect_blockage():
                                 transmission_loss=transmission_loss)]
 
     original_ray = deepcopy(scenario.get_channel(0, 1, 0)[0])
+    assert(isinstance(original_ray, Ray))
 
     env = Environment(scenario=scenario, obstacles=obstacles)
     env.process()

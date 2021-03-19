@@ -95,9 +95,9 @@ class QdRealizationScenario(Scenario):
         self._assess_scenario_validity()
 
     def _assess_scenario_validity(self):
-        n_nodes = self._cfg['numberOfNodes']
-        time_steps = self._cfg['numberOfTimeDivisions']
+        assert self._channel is not None
 
+        n_nodes = self._cfg['numberOfNodes']
         # Check number of nodes (num rows)
         assert len(self._channel) == n_nodes, \
             f"Invalid number of nodes: declared {n_nodes}, found {len(self._channel)} tx (dim 0)"
@@ -107,10 +107,11 @@ class QdRealizationScenario(Scenario):
                 f"Invalid number of nodes: declared {n_nodes}, found {len(self._channel)} rx (dim 1)"
 
         # Check number of time steps for each node pair
+        time_steps = self._cfg['numberOfTimeDivisions']
         for tx, row in enumerate(self._channel):
             for rx, channel in enumerate(row):
-                if tx == rx:
-                    # Ignore elements on main diagonal
+                if channel is None:
+                    # Ignore None channels (e.g., elements on main diagonal)
                     continue
 
                 assert len(channel) == time_steps, \
@@ -134,7 +135,6 @@ class QdRealizationScenario(Scenario):
 
     def get_channel(self, tx: Optional[int] = None, rx: Optional[int] = None, t: Optional[int] = None) -> Union[
         List[List[Optional[List[List[Ray]]]]], List[List[Ray]], List[Ray]]:
-
         if (tx is None) and (rx is None) and (t is None):
             # Return all channels
             return self._channel
@@ -150,7 +150,9 @@ class QdRealizationScenario(Scenario):
 
         if (tx is not None) and (rx is not None) and (t is None):
             # Return all time steps for given tx/rx pair
-            return self._channel[tx][rx]
+            ch = self._channel[tx][rx]
+            assert ch is not None, f"channel({tx=}),({rx=}) should not be None"
+            return ch
 
         if t is not None:
             assert 0 <= t < self.get_time_steps(), \
@@ -166,8 +168,7 @@ class QdRealizationScenario(Scenario):
     def set_channel(self, tx: int, rx: int, t: List[List[Ray]]) -> None:
         assert 0 <= tx < self.get_num_nodes(), f"Invalid tx index ({tx}) for scenario with {self.get_num_nodes()} nodes"
         assert 0 <= rx < self.get_num_nodes(), f"Invalid rx index ({rx}) for scenario with {self.get_num_nodes()} nodes"
-        assert tx != rx, f"Invalid query for self-channel"
-        if self._channel:
-            assert len(t) == len(self._channel[tx][rx]), f"Invalid {len(t)=}: should be {len(self._channel[tx][rx])}"
+        assert (ch := self._channel[tx][rx]), f"None channel for {tx=}, {rx=}"
+        assert len(t) == len(ch), f"Invalid {len(t)=}: should be {len(ch)}"
 
         self._channel[tx][rx] = t

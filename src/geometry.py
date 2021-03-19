@@ -9,6 +9,7 @@
 
 import numpy as np
 from typing import Tuple, Union, Sequence, overload
+import math
 
 
 class GeometryArithmeticError(Exception):
@@ -138,13 +139,13 @@ class Vector:
         return (self.x == other.x) and (self.y == other.y) and (self.z == other.z)
 
     def azimuth(self) -> float:
-        return np.arctan2(self.y, self.x)
+        return math.atan2(self.y, self.x)
 
     def inclination(self) -> float:
-        return np.arccos(self.z / self.length())
+        return math.acos(self.z / self.length())
 
     def elevation(self) -> float:
-        return np.arcsin(self.z / self.length())
+        return math.asin(self.z / self.length())
 
     def length(self) -> float:
         return np.linalg.norm(self.coord)
@@ -254,10 +255,10 @@ class Rectangle:
 
 
 def distance(p: Point, x: Union[Point, Line, Segment]) -> float:
-    if type(x) == Point:
+    if isinstance(x, Point):
         return (p - x).length()
 
-    if type(x) == Line:
+    if isinstance(x, Line):
         projection, _ = project(p, x)
         return (p - projection).length()
 

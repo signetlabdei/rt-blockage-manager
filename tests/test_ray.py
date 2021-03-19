@@ -10,7 +10,7 @@
 from src.ray import Ray
 from src.geometry import Point
 import pytest
-import numpy as np
+import math
 from copy import deepcopy
 
 
@@ -42,11 +42,11 @@ def test_ray_aoa_aod():
 
     assert r.aod_azimuth() == pytest.approx(0)
     assert r.aod_elevation() == pytest.approx(0)
-    assert r.aod_inclination() == pytest.approx(np.pi / 2)
+    assert r.aod_inclination() == pytest.approx(math.pi / 2)
 
-    assert r.aoa_azimuth() == pytest.approx(np.pi)
+    assert r.aoa_azimuth() == pytest.approx(math.pi)
     assert r.aoa_elevation() == pytest.approx(0)
-    assert r.aoa_inclination() == pytest.approx(np.pi / 2)
+    assert r.aoa_inclination() == pytest.approx(math.pi / 2)
 
 
 def test_refl_order():

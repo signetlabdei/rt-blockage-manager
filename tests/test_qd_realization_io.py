@@ -98,8 +98,10 @@ def test_import_working_scenario_1():
     assert len(channels[1]) == 2
 
     # The channel has 1 time step
-    assert len(channels[0][1]) == 1
-    assert len(channels[1][0]) == 1
+    assert (ch := channels[0][1])
+    assert len(ch) == 1
+    assert (ch := channels[1][0])
+    assert len(ch) == 1
 
     # The channel has 1 ray
     assert len(channels[0][1][0]) == 1
@@ -120,8 +122,10 @@ def test_import_working_scenario_2():
     assert len(channels[1]) == 2
 
     # The channel has 1 time step
-    assert len(channels[0][1]) == 1
-    assert len(channels[1][0]) == 1
+    assert (ch := channels[0][1])
+    assert len(ch) == 1
+    assert (ch := channels[1][0])
+    assert len(ch) == 1
 
     # The channel has 2 ray
     assert len(channels[0][1][0]) == 2
@@ -146,8 +150,10 @@ def test_import_working_scenario_3():
     assert len(channels[1]) == 2
 
     # The channel has 1 time step
-    assert len(channels[0][1]) == 1
-    assert len(channels[1][0]) == 1
+    assert (ch := channels[0][1])
+    assert len(ch) == 1
+    assert (ch := channels[1][0])
+    assert len(ch) == 1
 
     # The channel has 3 ray
     assert len(channels[0][1][0]) == 3
@@ -176,8 +182,10 @@ def test_import_working_scenario_4():
     assert len(channels[1]) == 2
 
     # The channel has 5 time step
-    assert len(channels[0][1]) == 5
-    assert len(channels[1][0]) == 5
+    assert (ch := channels[0][1])
+    assert len(ch) == 5
+    assert (ch := channels[1][0])
+    assert len(ch) == 5
 
     # The channel has 3 ray
     assert [len(channels[0][1][t]) for t in range(5)] == [2, 1, 0, 0, 1]
@@ -198,5 +206,8 @@ def test_import_indoor1():
 
     # Check time steps
     time_steps = cfg['numberOfTimeDivisions']
-    assert len(channels[0][1]) == time_steps
-    assert len(channels[1][0]) == time_steps
+    assert (ch := channels[0][1])
+    assert len(ch) == time_steps
+    assert (ch := channels[1][0])
+    assert len(ch) == time_steps
+    

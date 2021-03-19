@@ -10,6 +10,7 @@
 from src.geometry import GeometryArithmeticError, Vector, Point, Segment, Line, Rectangle, distance, project
 import pytest
 import numpy as np
+import math
 
 
 # Vector
@@ -86,7 +87,7 @@ def test_vector_add():
 
     # Vector + anything: error
     with pytest.raises(GeometryArithmeticError):
-        v + 1
+        v + 1  # type: ignore
 
 
 def test_vector_sub():
@@ -99,7 +100,7 @@ def test_vector_sub():
 
     # Vector - anything: error
     with pytest.raises(GeometryArithmeticError):
-        v - 1
+        v - 1  # type: ignore
 
 
 def test_vector_mul():
@@ -112,7 +113,7 @@ def test_vector_mul():
 
     # Vector * Vector: error
     with pytest.raises(GeometryArithmeticError):
-        v * v
+        v * v  # type: ignore
 
 
 def test_vector_rmul():
@@ -145,12 +146,12 @@ def test_vector_eq():
         v1 == Point(1, 2, 3)
 
 
-@pytest.mark.parametrize("v,az,el,incl", [(Vector(1, 0, 0), 0, 0, np.pi / 2),
-                                          (Vector(-1, 0, 0), np.pi, 0, np.pi / 2),
-                                          (Vector(0, 1, 0), np.pi / 2, 0, np.pi / 2),
-                                          (Vector(0, -1, 0), -np.pi / 2, 0, np.pi / 2),
-                                          (Vector(0, 0, 1), 0, np.pi / 2, 0),
-                                          (Vector(0, 0, -1), 0, -np.pi / 2, np.pi)])
+@pytest.mark.parametrize("v,az,el,incl", [(Vector(1, 0, 0), 0, 0, math.pi / 2),
+                                          (Vector(-1, 0, 0), math.pi, 0, math.pi / 2),
+                                          (Vector(0, 1, 0), math.pi / 2, 0, math.pi / 2),
+                                          (Vector(0, -1, 0), -math.pi / 2, 0, math.pi / 2),
+                                          (Vector(0, 0, 1), 0, math.pi / 2, 0),
+                                          (Vector(0, 0, -1), 0, -math.pi / 2, math.pi)])
 def test_vector_az_el_incl(v, az, el, incl):
     assert v.azimuth() == pytest.approx(az)
     assert v.elevation() == pytest.approx(el)
@@ -191,7 +192,7 @@ def test_point_sub():
 
     # Point - anything: error
     with pytest.raises(GeometryArithmeticError):
-        p1 - 1
+        p1 - 1  # type: ignore
 
 
 def test_point_add():
@@ -206,7 +207,7 @@ def test_point_add():
 
     # Point + Point: error
     with pytest.raises(GeometryArithmeticError):
-        p + p
+        p + p  # type: ignore
 
 
 def test_point_eq():
@@ -257,9 +258,9 @@ def test_segment_eq():
 
 
 @pytest.mark.parametrize("s,aod_az,aod_el,aod_incl,aoa_az,aoa_el,aoa_incl",
-                         [(Segment(Point(0, 0, 0), Point(1, 0, 0)), 0, 0, np.pi / 2, np.pi, 0, np.pi / 2),
-                          (Segment(Point(0, 0, 0), Point(0, 1, 0)), np.pi / 2, 0, np.pi / 2, -np.pi / 2, 0, np.pi / 2),
-                          (Segment(Point(0, 0, 0), Point(0, 0, 1)), 0, np.pi / 2, 0, 0, -np.pi / 2, np.pi)])
+                         [(Segment(Point(0, 0, 0), Point(1, 0, 0)), 0, 0, math.pi / 2, math.pi, 0, math.pi / 2),
+                          (Segment(Point(0, 0, 0), Point(0, 1, 0)), math.pi / 2, 0, math.pi / 2, -math.pi / 2, 0, math.pi / 2),
+                          (Segment(Point(0, 0, 0), Point(0, 0, 1)), 0, math.pi / 2, 0, 0, -math.pi / 2, math.pi)])
 def test_segment_aoa_aod(s, aod_az, aod_el, aod_incl, aoa_az, aoa_el, aoa_incl):
     assert s.aod_azimuth() == pytest.approx(aod_az)
     assert s.aod_elevation() == pytest.approx(aod_el)
@@ -374,4 +375,4 @@ def test_distance():
 
     # Distance with anything else: error
     with pytest.raises(TypeError):
-        distance(p, Vector(0, 0, 0))
+        distance(p, Vector(0, 0, 0))  # type: ignore
