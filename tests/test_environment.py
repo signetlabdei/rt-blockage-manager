@@ -13,8 +13,7 @@ from src.obstacle import SphereObstacle
 from src.scenario import QdRealizationScenario
 from src.environment import Environment
 from src.mobility_model import ConstantPositionMobilityModel as cpmm
-import pytest
-import numpy as np
+import math
 from copy import deepcopy
 
 
@@ -22,8 +21,8 @@ def test_environment_no_blockage():
     scenario = QdRealizationScenario('scenarios/WorkingScenario1')
     obstacles = [SphereObstacle(mm=cpmm(Point(5, 2, 0)),
                                 radius=1.0,
-                                reflection_loss=np.inf,
-                                transmission_loss=np.inf)]
+                                reflection_loss=math.inf,
+                                transmission_loss=math.inf)]
 
     original_ray = deepcopy(scenario.get_channel(0, 1, 0)[0])
 
@@ -44,8 +43,8 @@ def test_environment_perfect_blockage():
     scenario = QdRealizationScenario('scenarios/WorkingScenario1')
     obstacles = [SphereObstacle(mm=cpmm(Point(5, 0, 0)),
                                 radius=1.0,
-                                reflection_loss=np.inf,
-                                transmission_loss=np.inf)]
+                                reflection_loss=math.inf,
+                                transmission_loss=math.inf)]
     env = Environment(scenario=scenario, obstacles=obstacles)
     env.process()
 
@@ -64,7 +63,7 @@ def test_environment_imprefect_blockage():
     scenario = QdRealizationScenario('scenarios/WorkingScenario1')
     obstacles = [SphereObstacle(mm=cpmm(Point(5, 0, 0)),
                                 radius=1.0,
-                                reflection_loss=np.inf,
+                                reflection_loss=math.inf,
                                 transmission_loss=transmission_loss)]
 
     original_ray = deepcopy(scenario.get_channel(0, 1, 0)[0])
@@ -87,8 +86,8 @@ def test_environment_ws5():
     scenario = QdRealizationScenario('scenarios/WorkingScenario5')
     obstacles = [SphereObstacle(mm=cpmm(Point(5, 0, 0)),
                                 radius=1.0,
-                                reflection_loss=np.inf,
-                                transmission_loss=np.inf)]
+                                reflection_loss=math.inf,
+                                transmission_loss=math.inf)]
 
     original_rays01 = deepcopy(scenario.get_channel(0, 1))
 

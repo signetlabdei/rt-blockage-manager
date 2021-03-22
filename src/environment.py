@@ -8,7 +8,7 @@
 # Date: January 2021
 
 from src.geometry import Point
-import numpy as np
+import math
 from src.scenario import QdRealizationScenario, Scenario
 from src.obstacle import Obstacle, SphereObstacle
 from src.ray import Ray
@@ -50,7 +50,7 @@ class Environment:
             if obs.obstructs(ray):
                 ray.path_gain -= obs.transmission_loss()
         
-        if ray.path_gain > -np.inf:
+        if ray.path_gain > -math.inf:
             return [ray]
         else:
             # Automatically remove ray if insignificant

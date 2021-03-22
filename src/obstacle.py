@@ -9,6 +9,7 @@
 
 from abc import ABC, abstractmethod
 import numpy as np
+import math
 from src import geometry as geom
 from src.ray import Ray
 from src.mobility_model import MobilityModel, ConstantPositionMobilityModel as cpmm
@@ -59,8 +60,8 @@ class SphereObstacle(Obstacle):
     def __init__(self,
                  mm: MobilityModel,
                  radius: float,
-                 reflection_loss: float = np.inf,
-                 transmission_loss: float = np.inf):
+                 reflection_loss: float = math.inf,
+                 transmission_loss: float = math.inf):
         self._mm = mm
         self._radius = radius
         self._reflection_loss = reflection_loss
