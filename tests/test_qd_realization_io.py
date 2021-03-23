@@ -9,6 +9,7 @@
 
 from src.qd_realization_io import import_qd_file, import_mpc_coordinates, import_rays
 from src.qd_realization_io import import_parameter_configuration, import_scenario
+from src.qd_realization_io import _list_files, is_qd_file, is_mpc_coords_file, is_para_cfg_file
 from src.geometry import Point
 import os
 
@@ -211,3 +212,47 @@ def test_import_indoor1():
     assert (ch := channels[1][0])
     assert len(ch) == time_steps
     
+def test_list_files():
+    f = _list_files("scenarios/WorkingScenario1", recursive=False)
+
+    assert len(f) == 1
+    assert f[0] == "scenario"
+
+def test_is_qd_file():
+    assert is_qd_file("Output/Ns3/QdFiles/Tx0Rx1.txt")
+    assert is_qd_file("asd/qwe/Output/Ns3/QdFiles/Tx0Rx1.txt")
+    assert is_qd_file("Output/Ns3/QdFiles/Tx10Rx100.txt")
+    assert not is_qd_file("Ns3/QdFiles/Tx0Rx1.txt")
+    assert not is_qd_file("Output/QdFiles/Tx0Rx1.txt")
+    assert not is_qd_file("Output/Ns3/Tx0Rx1.txt")
+    assert not is_qd_file("Output/Ns3/QdFiles/Tx0Rx1")
+    assert not is_qd_file("Output/Ns3/QdFiles/Tx0Rx.txt")
+    assert not is_qd_file("Output/Ns3/QdFiles/TxRx1.txt")
+
+
+def test_is_mpc_coords_file():
+    assert is_mpc_coords_file(
+        "Output/Visualizer/MpcCoordinates/MpcTx0Rx1Refl0Trc0.csv")
+    assert is_mpc_coords_file(
+        "asd/qwe/Output/Visualizer/MpcCoordinates/MpcTx0Rx1Refl0Trc0.csv")
+    assert is_mpc_coords_file(
+        "Output/Visualizer/MpcCoordinates/MpcTx10Rx100Refl10Trc99.csv")
+    assert not is_mpc_coords_file(
+        "Visualizer/MpcCoordinates/MpcTx0Rx1Refl0Trc0.csv")
+    assert not is_mpc_coords_file(
+        "Output/MpcCoordinates/MpcTx0Rx1Refl0Trc0.csv")
+    assert not is_mpc_coords_file("Output/Visualizer/MpcTx0Rx1Refl0Trc0.csv")
+    assert not is_mpc_coords_file(
+        "Output/Visualizer/MpcCoordinates/MpcTx0Rx1Refl0Trc0")
+    assert not is_mpc_coords_file(
+        "Output/Visualizer/MpcCoordinates/MpcTx0RxRefl0Trc0.csv")
+    assert not is_mpc_coords_file(
+        "Output/Visualizer/MpcCoordinates/MpcTxRx1Refl0Trc0.csv")
+
+
+def test_is_para_cfg_file():
+    assert is_para_cfg_file("Input/paraCfgCurrent.txt")
+    assert is_para_cfg_file("asd/qwe/Input/paraCfgCurrent.txt")
+    assert not is_para_cfg_file("Input/paraCfgCurrent")
+    assert not is_para_cfg_file("Input/ParaCfgCurrent.txt")
+    assert not is_para_cfg_file("paraCfgCurrent.txt")

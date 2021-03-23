@@ -1,10 +1,10 @@
 # AUTHOR(S):
 # Mattia Lecci <mattia.lecci@dei.unipd.it>
-# 
+#
 # University of Padova (UNIPD), Italy
-# Information Engineering Department (DEI) 
+# Information Engineering Department (DEI)
 # SIGNET Research Group @ http://signet.dei.unipd.it/
-# 
+#
 # Date: January 2021
 
 from src.scenario import QdRealizationScenario
@@ -57,7 +57,7 @@ def test_get_channel():
     ch = s.get_channel(0, 1, 0)
     assert isinstance(ch, list)  # rays
     assert isinstance(ch[0], Ray)
-    
+
 
 @pytest.mark.parametrize("scenario_path",
                          ["scenarios/WorkingScenario1",
@@ -66,7 +66,7 @@ def test_get_channel():
                           "scenarios/WorkingScenario4",
                           "scenarios/WorkingScenario5",
                           "scenarios/Indoor1"])
-def test_export(scenario_path):
+def test_basic_export(scenario_path):
     s1 = QdRealizationScenario(scenario_path)
 
     out_folder = f"tmp_{datetime.now()}"
@@ -79,7 +79,7 @@ def test_export(scenario_path):
         s2.export(out_folder, precision=6, do_export_mpc_coords=True)
         s3 = QdRealizationScenario(out_folder)
         _compare_scenarios_equal(s1, s3)
-    
+
     finally:
         shutil.rmtree(out_folder)
 
@@ -107,3 +107,49 @@ def _compare_scenarios_equal(s1: QdRealizationScenario, s2: QdRealizationScenari
 
                 for r1, r2 in zip(ch1, ch2):
                     assert r1 == r2
+
+
+@pytest.mark.parametrize("scenario_path",
+                         ["scenarios/WorkingScenario1",
+                          "scenarios/WorkingScenario2",
+                          "scenarios/WorkingScenario3",
+                          "scenarios/WorkingScenario4",
+                          "scenarios/WorkingScenario5",
+                          "scenarios/Indoor1"])
+def test_export_copy_other_files(scenario_path):
+    s = QdRealizationScenario(scenario_path)
+
+    out_folder = f"tmp_{datetime.now()}"
+    try:
+        s.export(out_folder, precision=6,
+                 do_export_mpc_coords=True,
+                 do_copy_unnecessary_files=True)
+        os.path.exists(os.path.join(out_folder, "scenario"))
+
+    finally:
+        shutil.rmtree(out_folder)
+
+
+def test_export_overwrite_other_files():
+    s = QdRealizationScenario("scenarios/WorkingScenario1")
+
+    out_folder = f"tmp_{datetime.now()}"
+    
+    # create ficticious colliding file
+    os.makedirs(out_folder, exist_ok=False)
+    with open(os.path.join(out_folder, "scenario"), 'wt') as f:
+        f.write("ficticious!")
+    
+    try:
+        s.export(out_folder, precision=6,
+                 do_export_mpc_coords=True,
+                 do_copy_unnecessary_files=True)
+        
+        assert os.path.exists(os.path.join(out_folder, "scenario"))
+
+        with open(os.path.join(out_folder, "scenario"), 'rt') as f:
+            line = f.readline()
+            assert line != "ficticious!"
+
+    finally:
+        shutil.rmtree(out_folder)

@@ -11,6 +11,9 @@ from abc import ABC, abstractmethod
 from typing import Dict, Optional, Union, List, overload, Any
 import src.qd_realization_io as qdio
 from src.ray import Ray
+import shutil
+from os import path
+import os
 
 
 class Scenario(ABC):
@@ -98,6 +101,7 @@ class QdRealizationScenario(Scenario):
         self._channel = qdio.import_scenario(self._scenario_path)
         self._cfg: Dict[str, Any] = qdio.import_parameter_configuration(
             self._scenario_path)
+        self._other_files = qdio.get_other_files(self._scenario_path)
 
         self._assess_scenario_validity()
 
@@ -140,11 +144,26 @@ class QdRealizationScenario(Scenario):
     def get_time_step_duration(self) -> float:
         return self.get_scenario_duration() / self.get_time_steps()
 
-    def export(self, out_folder: str, precision: int = 6, do_export_mpc_coords: bool = True) -> None:
+    def export(self, out_folder: str,
+               precision: int = 6,
+               do_export_mpc_coords: bool = True,
+               do_copy_unnecessary_files: bool = True) -> None:
         qdio.export_parameter_configuration(out_folder, self._cfg)
         qdio.export_scenario(out_folder, self._channel,
                              precision=precision,
                              do_export_mpc_coords=do_export_mpc_coords)
+
+        if do_copy_unnecessary_files and (not path.samefile(self._scenario_path, out_folder)):
+            for file in self._other_files:
+                src_file = path.join(self._scenario_path, file)
+                dst_file = path.join(out_folder, file)
+
+                if os.path.exists(dst_file):
+                    os.remove(dst_file)
+
+                dst_dir, _ = path.split(dst_file)
+                os.makedirs(dst_dir, exist_ok=True)
+                shutil.copy(src_file, dst_file)
 
     def get_channel(self, tx: Optional[int] = None, rx: Optional[int] = None, t: Optional[int] = None) -> Union[
             List[List[Optional[List[List[Ray]]]]], List[List[Ray]], List[Ray]]:

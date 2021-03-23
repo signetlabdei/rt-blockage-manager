@@ -13,13 +13,23 @@ from src.ray import Ray
 from src import utils
 import os
 import shutil
+import re
 
 # Constants
-_QD_FILES_PATH = "Output/Ns3/QdFiles"
-_MPC_COORDS_PATH = "Output/Visualizer/MpcCoordinates"
 _INPUT_PATH = "Input"
 
+_OUTPUT_PATH = "Output"
+# Output subdirs
+_NS3_PATH = os.path.join(_OUTPUT_PATH, "Ns3")
+_VISUALIZER_PATH = os.path.join(_OUTPUT_PATH, "Visualizer")
+# Output/Ns3 subdirs
+_QD_FILES_PATH = os.path.join(_NS3_PATH, "QdFiles")
+# Output/Visualizer subdirs
+_MPC_COORDS_PATH = os.path.join(_VISUALIZER_PATH, "MpcCoordinates")
+
 _PARA_CFG_HEADER = "ParameterName\tParameterValue"
+_QD_FILENAME_REGEX = r"Tx(\d+)Rx(\d+).txt"
+_MPC_COORDS_FILENAME_REGEX = r"MpcTx(\d+)Rx(\d+)Refl(\d+)Trc(\d+).csv"
 
 # Functions
 
@@ -147,6 +157,8 @@ def export_mpc_coordinates(out_folder: str, tx: int, rx: int,
     assert ch is not None, f"Invalid choice for {tx=}, {rx=}: channel is None"
 
     mpc_coords_folder = os.path.join(out_folder, _MPC_COORDS_PATH)
+    os.makedirs(mpc_coords_folder, exist_ok=True)
+
     for t, rays in enumerate(ch):
         for ray in rays:
             refl = ray.refl_order()
@@ -303,3 +315,93 @@ def export_scenario(out_folder: str,
             export_qd_file(out_folder, tx, rx, ch_matrix, precision)
             if do_export_mpc_coords and (tx < rx):
                 export_mpc_coordinates(out_folder, tx, rx, ch_matrix)
+
+
+def get_other_files(scenario_path: str) -> List[str]:
+    all_files = _list_files(scenario_path, recursive=True)
+
+    other_files = []
+    for file in all_files:
+        if is_qd_file(file):
+            continue
+
+        if is_mpc_coords_file(file):
+            continue
+
+        if is_para_cfg_file(file):
+            continue
+
+        other_files.append(file)
+
+    return other_files
+
+
+def _list_files(path: str, recursive: bool = True) -> List[str]:
+    listdir = os.listdir(path)
+
+    # separate files and folders
+    files: List[str] = []
+    folders: List[str] = []
+    for f in listdir:
+        full_path = os.path.join(path, f)
+        if os.path.isfile(full_path):
+            files.append(f)
+        elif os.path.isdir(full_path):
+            folders.append(f)
+        else:
+            raise TypeError(
+                f"{full_path=} is neither a file nor a folder")  # pragma: no cover
+
+    if not recursive:
+        return files
+
+    if len(folders) == 0:
+        # no subfolders: return
+        return files
+
+    for folder in folders:
+        subfiles = _list_files(os.path.join(path, folder), recursive=recursive)
+        # append sub-files
+        files += [os.path.join(folder, file) for file in subfiles]
+
+    return files
+
+
+def is_qd_file(filepath: str) -> bool:
+    dir, filename = os.path.split(filepath)
+    if not re.match(_QD_FILENAME_REGEX, filename):
+        return False
+
+    pardir, qd_dir = os.path.split(dir)
+    pardir, ns3_dir = os.path.split(pardir)
+    _, out_dir = os.path.split(pardir)
+    if os.path.join(out_dir, ns3_dir, qd_dir) != _QD_FILES_PATH:
+        return False
+
+    return True
+
+
+def is_mpc_coords_file(filepath: str) -> bool:
+    dir, filename = os.path.split(filepath)
+    if not re.match(_MPC_COORDS_FILENAME_REGEX, filename):
+        return False
+
+    pardir, mpc_coords_dir = os.path.split(dir)
+    pardir, vis_dir = os.path.split(pardir)
+    _, out_dir = os.path.split(pardir)
+    if os.path.join(out_dir, vis_dir, mpc_coords_dir) != _MPC_COORDS_PATH:
+        return False
+
+    return True
+
+
+def is_para_cfg_file(filepath: str) -> bool:
+    dir, filename = os.path.split(filepath)
+    if filename != get_para_cfg_name():
+        return False
+
+    _, input_dir = os.path.split(dir)
+    if input_dir != _INPUT_PATH:
+        return False
+
+    return True
