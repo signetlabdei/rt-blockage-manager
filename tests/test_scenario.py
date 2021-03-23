@@ -10,6 +10,9 @@
 from src.scenario import QdRealizationScenario
 from src.ray import Ray
 import pytest
+import os
+from datetime import datetime
+import shutil
 
 
 @pytest.mark.parametrize("scenario_path,nodes,duration,freq,time_steps,time_step_duration",
@@ -55,3 +58,52 @@ def test_get_channel():
     assert isinstance(ch, list)  # rays
     assert isinstance(ch[0], Ray)
     
+
+@pytest.mark.parametrize("scenario_path",
+                         ["scenarios/WorkingScenario1",
+                          "scenarios/WorkingScenario2",
+                          "scenarios/WorkingScenario3",
+                          "scenarios/WorkingScenario4",
+                          "scenarios/WorkingScenario5",
+                          "scenarios/Indoor1"])
+def test_export(scenario_path):
+    s1 = QdRealizationScenario(scenario_path)
+
+    out_folder = f"tmp_{datetime.now()}"
+    try:
+        s1.export(out_folder, precision=6, do_export_mpc_coords=True)
+        s2 = QdRealizationScenario(out_folder)
+        _compare_scenarios_equal(s1, s2)
+
+        # Test re-write on same output folder multiple times
+        s2.export(out_folder, precision=6, do_export_mpc_coords=True)
+        s3 = QdRealizationScenario(out_folder)
+        _compare_scenarios_equal(s1, s3)
+    
+    finally:
+        shutil.rmtree(out_folder)
+
+
+def _compare_scenarios_equal(s1: QdRealizationScenario, s2: QdRealizationScenario) -> None:
+    # The exported scenario should be the same as the original one
+    assert s1._cfg == s2._cfg
+
+    n_nodes1 = s1.get_num_nodes()
+    n_nodes2 = s2.get_num_nodes()
+    assert n_nodes1 == n_nodes2
+
+    t1 = s1.get_time_steps()
+    t2 = s2.get_time_steps()
+    assert t1 == t2
+
+    for tx in range(n_nodes1):
+        for rx in range(n_nodes1):
+            if tx == rx:
+                continue
+
+            for t in range(t1):
+                ch1 = s1.get_channel(tx, rx, t)
+                ch2 = s2.get_channel(tx, rx, t)
+
+                for r1, r2 in zip(ch1, ch2):
+                    assert r1 == r2

@@ -1,14 +1,14 @@
 # AUTHOR(S):
 # Mattia Lecci <mattia.lecci@dei.unipd.it>
-# 
+#
 # University of Padova (UNIPD), Italy
-# Information Engineering Department (DEI) 
+# Information Engineering Department (DEI)
 # SIGNET Research Group @ http://signet.dei.unipd.it/
-# 
+#
 # Date: January 2021
 
 from abc import ABC, abstractmethod
-from typing import Optional, Union, List, overload
+from typing import Dict, Optional, Union, List, overload, Any
 import src.qd_realization_io as qdio
 from src.ray import Ray
 
@@ -45,6 +45,12 @@ class Scenario(ABC):
         """
 
     @abstractmethod
+    def export(self, out_folder: str) -> None:
+        """
+        Export scenario in the appropriate folder structure
+        """
+
+    @abstractmethod
     @overload
     def get_channel(self) -> List[List[Optional[List[List[Ray]]]]]:
         ...
@@ -61,7 +67,7 @@ class Scenario(ABC):
 
     @abstractmethod
     def get_channel(self, tx: Optional[int] = None, rx: Optional[int] = None, t: Optional[int] = None) -> Union[
-        List[List[Optional[List[List[Ray]]]]], List[List[Ray]], List[Ray]]:
+            List[List[Optional[List[List[Ray]]]]], List[List[Ray]], List[Ray]]:
         """
         Return a channel structure.
         Variants:
@@ -76,7 +82,7 @@ class Scenario(ABC):
         - (self: Scenario, tx: int, rx: int, t: int) -> List[Ray]:
         Return the list of Ray for the requested channel instance.
         """
-    
+
     @abstractmethod
     def set_channel(self, tx: int, rx: int, t: List[List[Ray]]) -> None:
         """
@@ -90,7 +96,8 @@ class QdRealizationScenario(Scenario):
 
         # import qd-realization scenario
         self._channel = qdio.import_scenario(self._scenario_path)
-        self._cfg = qdio.import_parameter_configuration(self._scenario_path)
+        self._cfg: Dict[str, Any] = qdio.import_parameter_configuration(
+            self._scenario_path)
 
         self._assess_scenario_validity()
 
@@ -133,8 +140,14 @@ class QdRealizationScenario(Scenario):
     def get_time_step_duration(self) -> float:
         return self.get_scenario_duration() / self.get_time_steps()
 
+    def export(self, out_folder: str, precision: int = 6, do_export_mpc_coords: bool = True) -> None:
+        qdio.export_parameter_configuration(out_folder, self._cfg)
+        qdio.export_scenario(out_folder, self._channel,
+                             precision=precision,
+                             do_export_mpc_coords=do_export_mpc_coords)
+
     def get_channel(self, tx: Optional[int] = None, rx: Optional[int] = None, t: Optional[int] = None) -> Union[
-        List[List[Optional[List[List[Ray]]]]], List[List[Ray]], List[Ray]]:
+            List[List[Optional[List[List[Ray]]]]], List[List[Ray]], List[Ray]]:
         if (tx is None) and (rx is None) and (t is None):
             # Return all channels
             return self._channel
@@ -162,13 +175,16 @@ class QdRealizationScenario(Scenario):
             # Return list of Ray for given tx/rx pair at given time step
             return self._channel[tx][rx][t]
 
-        raise ValueError(f"Invalid arguments: tx={tx}, rx={rx}, t={t}")  # pragma: no cover
-
+        raise ValueError(
+            f"Invalid arguments: tx={tx}, rx={rx}, t={t}")  # pragma: no cover
 
     def set_channel(self, tx: int, rx: int, t: List[List[Ray]]) -> None:
-        assert 0 <= tx < self.get_num_nodes(), f"Invalid tx index ({tx}) for scenario with {self.get_num_nodes()} nodes"
-        assert 0 <= rx < self.get_num_nodes(), f"Invalid rx index ({rx}) for scenario with {self.get_num_nodes()} nodes"
+        assert 0 <= tx < self.get_num_nodes(
+        ), f"Invalid tx index ({tx}) for scenario with {self.get_num_nodes()} nodes"
+        assert 0 <= rx < self.get_num_nodes(
+        ), f"Invalid rx index ({rx}) for scenario with {self.get_num_nodes()} nodes"
         assert (ch := self._channel[tx][rx]), f"None channel for {tx=}, {rx=}"
         assert len(t) == len(ch), f"Invalid {len(t)=}: should be {len(ch)}"
 
         self._channel[tx][rx] = t
+        self._assess_scenario_validity()
