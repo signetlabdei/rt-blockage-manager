@@ -104,6 +104,12 @@ class SphereObstacle(Obstacle):
 
         elif type(r) is Ray:
             for p1, p2 in zip(r.vertices[:-1], r.vertices[1:]):
+                if geom.distance(p1, p2) == 0:
+                    # Support corner case: check
+                    # https://github.com/signetlabdei/rt-blocakge-manager/issues/2
+                    # for more information
+                    continue
+
                 segment = geom.Segment(p1, p2)
                 d = geom.distance(center, segment)
                 if d < self.radius:

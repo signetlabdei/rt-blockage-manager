@@ -54,8 +54,14 @@ def test_sphere_obstacle_obstructs():
     # Unobstructed ray
     assert not o.obstructs(Ray(10e-9, 80, 0, [Point(10, 0, 0), Point(0, 10, 0), Point(-10, 0, 0)]))
 
+    # Unobstructed ray with corner reflection
+    assert not o.obstructs(Ray(10e-9, 80, 0, [Point(10, 0, 0), Point(0, 10, 0), Point(0, 10, 0), Point(-10, 0, 0)]))
+
     # Obstructed ray
     assert o.obstructs(Ray(10e-9, 80, 0, [Point(10, 0, 0), Point(-10, 0, 0), Point(0, 10, 0)]))
+
+    # Obstructed ray with corner reflection
+    assert o.obstructs(Ray(10e-9, 80, 0, [Point(10, 0, 0), Point(-10, 0, 0), Point(-10, 0, 0), Point(0, 10, 0)]))
 
     # Type error
     with pytest.raises(TypeError):

@@ -33,10 +33,10 @@ def test_environment_no_blockage():
     ch01 = env._scenario.get_channel(0, 1)
     ch10 = env._scenario.get_channel(1, 0)
 
-    assert len(ch01) == len(ch10) # same number of timesteps
-    assert len(ch01) == 1 # one timestep
-    assert len(ch01[0]) == 1 # one ray
-    assert ch01[0][0] == original_ray # the ray did not changed
+    assert len(ch01) == len(ch10)  # same number of timesteps
+    assert len(ch01) == 1  # one timestep
+    assert len(ch01[0]) == 1  # one ray
+    assert ch01[0][0] == original_ray  # the ray did not changed
 
 
 def test_environment_perfect_blockage():
@@ -106,3 +106,15 @@ def test_environment_ws5():
     for rays in ch01[3:-3]:
         # Obstruction from (10,2,0) to (10,-2,0)
         assert len(rays) == 0
+
+
+def test_environment_ws6():
+    scenario = QdRealizationScenario('scenarios/WorkingScenario6')
+    obstacles = [SphereObstacle(mm=cpmm(Point(5, 3, 1.6)),
+                                radius=1.0,
+                                reflection_loss=math.inf,
+                                transmission_loss=math.inf)]
+
+    env = Environment(scenario=scenario, obstacles=obstacles)
+    # Just check if corner reflection is properly supperted without throwing any error
+    env.process()

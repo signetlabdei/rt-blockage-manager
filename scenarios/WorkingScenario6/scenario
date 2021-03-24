@@ -1,0 +1,18 @@
+Corner reflection scenario
+
+            14 m
+ ____________________________
+|                            |
+|                            |
+|                            |
+|(1,3,1.6)                   |
+| N0             N1          |  7 m
+|            (9,3,1.6)       |
+|                            |
+|__________x_________________|
+        (5,0,0): corner reflection
+
+Room height: 3 m
+
+The positions of the two nodes create a corner reflection between the bottom wall and the floor.
+Using up to 2nd order reflections.

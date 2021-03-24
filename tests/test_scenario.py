@@ -65,6 +65,7 @@ def test_get_channel():
                           "scenarios/WorkingScenario3",
                           "scenarios/WorkingScenario4",
                           "scenarios/WorkingScenario5",
+                          "scenarios/WorkingScenario6",
                           "scenarios/Indoor1"])
 def test_basic_export(scenario_path):
     s1 = QdRealizationScenario(scenario_path)
@@ -115,6 +116,7 @@ def _compare_scenarios_equal(s1: QdRealizationScenario, s2: QdRealizationScenari
                           "scenarios/WorkingScenario3",
                           "scenarios/WorkingScenario4",
                           "scenarios/WorkingScenario5",
+                          "scenarios/WorkingScenario6",
                           "scenarios/Indoor1"])
 def test_export_copy_other_files(scenario_path):
     s = QdRealizationScenario(scenario_path)
