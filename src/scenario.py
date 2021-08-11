@@ -14,6 +14,7 @@ from src.ray import Ray
 import shutil
 from os import path
 import os
+import math
 
 
 class Scenario(ABC):
@@ -45,6 +46,18 @@ class Scenario(ABC):
     def get_frequency(self) -> float:
         """
         Return the operating frequency of the scenario
+        """
+
+    @abstractmethod
+    def get_relative_power_threshold(self) -> float:
+        """
+        Return the relative power threshold of the scenario
+        """
+
+    @abstractmethod
+    def get_absolute_power_threshold(self) -> float:
+        """
+        Return the absolute power threshold of the scenario
         """
 
     @abstractmethod
@@ -140,6 +153,12 @@ class QdRealizationScenario(Scenario):
 
     def get_time_steps(self) -> int:
         return self._cfg['numberOfTimeDivisions']
+
+    def get_relative_power_threshold(self) -> float:
+        return self._cfg.get('minRelativePathGainThreshold', -math.inf)
+
+    def get_absolute_power_threshold(self) -> float:
+        return self._cfg.get('minAbsolutePathGainThreshold', -math.inf)
 
     def get_time_step_duration(self) -> float:
         return self.get_scenario_duration() / self.get_time_steps()

@@ -11,11 +11,27 @@ from src.ray import Ray
 from src.geometry import Point
 from src.obstacle import SphereObstacle
 from src.scenario import QdRealizationScenario
-from src.environment import Environment
+from src.environment import Environment, ObstacleInteraction
 from src.mobility_model import ConstantPositionMobilityModel as cpmm
 import math
 from copy import deepcopy
+import pytest
 
+@pytest.mark.parametrize("obstacle_interaction,asserts", [(ObstacleInteraction.NONE, False),
+                                                          (ObstacleInteraction.OBSTRUCTION, False),
+                                                          (ObstacleInteraction.REFLECTION, True),
+                                                          (ObstacleInteraction.DIFFRACTION, True),
+                                                          (ObstacleInteraction.NONE, False),
+                                                          (ObstacleInteraction.OBSTRUCTION | ObstacleInteraction.DIFFRACTION, True),
+                                                          (ObstacleInteraction.NONE | ObstacleInteraction.OBSTRUCTION, True)])
+def test_environment_obstacle_interaction(obstacle_interaction, asserts):
+    scenario = QdRealizationScenario('scenarios/WorkingScenario1')
+    
+    if asserts:
+        with pytest.raises(AssertionError):
+            env = Environment(scenario, [], obstacle_interaction)
+    else:
+        env = Environment(scenario, [], obstacle_interaction)
 
 def test_environment_no_blockage():
     scenario = QdRealizationScenario('scenarios/WorkingScenario1')
