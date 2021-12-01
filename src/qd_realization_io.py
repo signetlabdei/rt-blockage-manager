@@ -1,4 +1,6 @@
 # AUTHOR(S):
+# Paolo Testolina <paolo.testolina@dei.unipd.it>
+# Alessandro Traspadini <alessandro.traspadini@dei.unipd.it>
 # Mattia Lecci <mattia.lecci@dei.unipd.it>
 #
 # University of Padova (UNIPD), Italy
@@ -14,6 +16,7 @@ from src import utils
 import os
 import shutil
 import re
+import math
 
 # Constants
 _INPUT_PATH = "Input"
@@ -76,13 +79,13 @@ def import_qd_file(path: str) -> List[Dict[str, Any]]:
 
             if n_rays > 0:
                 rays = {**rays,  # add to dict
-                        'delay': _get_next_row_floats(f, n_rays),
-                        'path_gain': _get_next_row_floats(f, n_rays),
-                        'phase_offset': _get_next_row_floats(f, n_rays),
-                        'aod_el': _get_next_row_floats(f, n_rays),
-                        'aod_az': _get_next_row_floats(f, n_rays),
-                        'aoa_el': _get_next_row_floats(f, n_rays),
-                        'aoa_az': _get_next_row_floats(f, n_rays)}
+                        'delay': _get_next_row_floats(f, n_rays),  # [s]
+                        'path_gain': _get_next_row_floats(f, n_rays),  # [dB]
+                        'phase_offset': _get_next_row_floats(f, n_rays),  # [rad]
+                        'aod_el': _get_next_row_floats(f, n_rays),  # [deg]
+                        'aod_az': _get_next_row_floats(f, n_rays),  # [deg]
+                        'aoa_el': _get_next_row_floats(f, n_rays),  # [deg]
+                        'aoa_az': _get_next_row_floats(f, n_rays)}  # [deg]
 
             qd_file.append(rays)
 
@@ -109,19 +112,19 @@ def export_qd_file(out_folder: str, tx: int, rx: int,
             f.write(f"{n_rays}\n")
 
             if n_rays > 0:
-                _write_row_floats(f, [ray.delay
+                _write_row_floats(f, [ray.delay  # [s]
                                       for ray in rays], precision)
-                _write_row_floats(f, [ray.path_gain
+                _write_row_floats(f, [ray.path_gain  # [dB]
                                       for ray in rays], precision)
-                _write_row_floats(f, [ray.phase
+                _write_row_floats(f, [ray.phase  # [rad]
                                       for ray in rays], precision)
-                _write_row_floats(f, [ray.aod_elevation()
+                _write_row_floats(f, [math.degrees(ray.aod_inclination())  # [deg]
                                       for ray in rays], precision)
-                _write_row_floats(f, [ray.aod_azimuth()
+                _write_row_floats(f, [math.degrees(ray.aod_azimuth()) % 360  # [deg] wrap to [0, 360)
                                       for ray in rays], precision)
-                _write_row_floats(f, [ray.aoa_elevation()
+                _write_row_floats(f, [math.degrees(ray.aoa_inclination())  # [deg]
                                       for ray in rays], precision)
-                _write_row_floats(f, [ray.aoa_azimuth()
+                _write_row_floats(f, [math.degrees(ray.aoa_azimuth()) % 360  # [deg] wrap to [0, 360)
                                       for ray in rays], precision)
 
 
@@ -232,18 +235,21 @@ def import_parameter_configuration(scenario_path: str) -> Dict[str, Any]:
 
         # discard header
         line = f.readline().strip()
-        cfg = {}
+        cfg: Dict[str, Any] = {}
         while line != '':  # EOF='' in python
             param_name, param_value = line.split('\t')
 
             # value conversion
+            converted_value: Any
             if utils.isint(param_value):
-                param_value = int(param_value)
+                converted_value = int(param_value)
             elif utils.isfloat(param_value):
-                param_value = float(param_value)
+                converted_value = float(param_value)
+            else:
+                converted_value = param_value
 
             # add parameter to dictionary
-            cfg[param_name] = param_value
+            cfg[param_name] = converted_value
 
             # read next line
             line = f.readline().strip()

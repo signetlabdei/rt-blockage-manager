@@ -1,3 +1,5 @@
-numpy==1.19.2
-pytest==6.2.1
-pytest-cov==2.11.1
+# Tested with Python 3.8, 3.9
+numpy~=1.21.4
+pytest~=6.2.1
+pytest-cov~=2.11.1
+scipy~=1.5.3

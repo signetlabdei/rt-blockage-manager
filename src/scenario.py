@@ -1,4 +1,6 @@
 # AUTHOR(S):
+# Paolo Testolina <paolo.testolina@dei.unipd.it>
+# Alessandro Traspadini <alessandro.traspadini@dei.unipd.it>
 # Mattia Lecci <mattia.lecci@dei.unipd.it>
 #
 # University of Padova (UNIPD), Italy
@@ -211,7 +213,9 @@ class QdRealizationScenario(Scenario):
 
         if (tx is not None) and (rx is not None) and (t is not None):
             # Return list of Ray for given tx/rx pair at given time step
-            return self._channel[tx][rx][t]
+            ch = self._channel[tx][rx]
+            assert ch is not None, f"channel({tx=}),({rx=}) should not be None"
+            return ch[t]
 
         raise ValueError(
             f"Invalid arguments: tx={tx}, rx={rx}, t={t}")  # pragma: no cover
@@ -221,8 +225,34 @@ class QdRealizationScenario(Scenario):
         ), f"Invalid tx index ({tx}) for scenario with {self.get_num_nodes()} nodes"
         assert 0 <= rx < self.get_num_nodes(
         ), f"Invalid rx index ({rx}) for scenario with {self.get_num_nodes()} nodes"
-        assert (ch := self._channel[tx][rx]), f"None channel for {tx=}, {rx=}"
+        ch = self._channel[tx][rx]
+        assert ch is not None, f"None channel for {tx=}, {rx=}"
         assert len(t) == len(ch), f"Invalid {len(t)=}: should be {len(ch)}"
 
         self._channel[tx][rx] = t
         self._assess_scenario_validity()
+
+    def __eq__(self, o: object) -> bool:
+        if not isinstance(o, QdRealizationScenario):
+            raise TypeError(f"{type(o)=}")
+
+        if self._cfg != o._cfg:
+            return False
+
+        if sorted(self._other_files) != sorted(o._other_files):
+            return False
+        
+        # compare channels
+        for tx in range(self.get_num_nodes()):
+            for rx in range(self.get_num_nodes()):
+                if tx == rx:
+                    continue
+
+                for t in range(self.get_time_steps()):
+                    self_ch = self.get_channel(tx, rx, t)
+                    o_ch = o.get_channel(tx, rx, t)
+
+                    if self_ch != o_ch:
+                        return False
+
+        return True

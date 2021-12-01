@@ -1,4 +1,6 @@
 # AUTHOR(S):
+# Paolo Testolina <paolo.testolina@dei.unipd.it>
+# Alessandro Traspadini <alessandro.traspadini@dei.unipd.it>
 # Mattia Lecci <mattia.lecci@dei.unipd.it>
 # 
 # University of Padova (UNIPD), Italy
@@ -7,7 +9,7 @@
 # 
 # Date: January 2021
 
-from src.geometry import GeometryArithmeticError, Vector, Point, Segment, Line, Rectangle, distance, project
+from src.geometry import GeometryArithmeticError, Parallelogram3d, Plane, Vector, Point, Segment, Line, Rectangle, TransfMatrix, distance, project
 import pytest
 import numpy as np
 import math
@@ -66,6 +68,14 @@ def test_dot(v1, v2, res):
     assert v1.dot(v2) == pytest.approx(res)
 
 
+@pytest.mark.parametrize("v1,v2,res", [(Vector(1, 0, 0), Vector(0, 1, 0), Vector(0, 0, 1)),
+                                       (Vector(0, 1, 0), Vector(1, 0, 0), Vector(0, 0, -1)),
+                                       (Vector(1, 2, 3), Vector(3, 4, 5), Vector(-2, 4, -2))])
+def test_cross(v1, v2, res):
+    v3 = v1.cross(v2)
+    assert (v3 - res).length() == pytest.approx(0)
+
+
 def test_vector_add():
     # Vector + Vector
     v1 = Vector(1, 2, 3)
@@ -80,7 +90,7 @@ def test_vector_add():
     p = Point(4, 5, 6)
 
     p_sum = v + p
-    assert type(p_sum) == Point
+    assert isinstance(p_sum, Point)
 
     p_expected = Point(5, 7, 9)
     assert (p_sum - p_expected).length() == pytest.approx(0)
@@ -102,6 +112,10 @@ def test_vector_sub():
     with pytest.raises(GeometryArithmeticError):
         v - 1  # type: ignore
 
+def test_vector_neg():
+    v = Vector(1, 2, 3)
+    v_neg = -v
+    assert (v_neg + v).length() == pytest.approx(0)
 
 def test_vector_mul():
     v1 = Vector(1, 2, 3)
@@ -200,7 +214,7 @@ def test_point_add():
     v = Vector(1, 2, 3)
 
     p2 = p + v
-    assert type(p2) == Point
+    assert isinstance(p2, Point)
 
     p_expected = Point(1, 2, 3)
     assert (p2 - p_expected).length() == pytest.approx(0)
@@ -340,39 +354,290 @@ def test_rectangle_is_inside(p, inside):
     assert r.is_inside(p) == inside
 
 
+# Plane
+def test_plane():
+    p1 = Point(1, -2, 0)
+    p2 = Point(3, 1, 4)
+    p3 = Point(0, -1, 2)
+    p = Plane(p1, p2, p3)
+    assert p.p1 == p1
+    assert p.p2 == p2
+    assert p.p3 == p3
+
+    # check repr string
+    p_repr = eval(str(p))
+    assert p == p_repr
+
+
+@pytest.mark.parametrize("test_plane,result",
+                         [(Plane(Point(1, -2, 0), Point(3, 1, 4), Point(0, -1, 2)), True),
+                          (Plane(Point(18/2, 0, 0), Point(0, -18/8, 0), Point(0, 0, 18/5)), True),
+                          (Plane(Point(0, 0, 0), Point(1, 0, 0), Point(0, 1, 0)), False)
+                          ])
+def test_plane_equals(test_plane, result):
+    p1 = Point(1, -2, 0)
+    p2 = Point(3, 1, 4)
+    p3 = Point(0, -1, 2)
+    p = Plane(p1, p2, p3)
+
+    assert (p == test_plane) == result
+
+
+def test_plane_equals_raise():
+    p1 = Point(1, -2, 0)
+    p2 = Point(3, 1, 4)
+    p3 = Point(0, -1, 2)
+    p = Plane(p1, p2, p3)
+
+    with pytest.raises(TypeError):
+        assert p == Point(0,0,0)
+
+
+def test_plane_normal():
+    p1 = Point(1, -2, 0)
+    p2 = Point(3, 1, 4)
+    p3 = Point(0, -1, 2)
+    p = Plane(p1, p2, p3)
+
+    n = p.normal
+    expected = Vector(2, -8, 5)
+    assert abs(n.normalize().dot(expected.normalize())) == pytest.approx(1)
+
+
+def test_plane_equation():
+    p1 = Point(1, -2, 0)
+    p2 = Point(3, 1, 4)
+    p3 = Point(0, -1, 2)
+    p = Plane(p1, p2, p3)
+
+    eq = p.equation
+    expected = (2, -8, 5, -18)
+
+    # equations can be offset by a multiplicative term
+    ratio = eq[0] / expected[0]
+
+    for eq_term, expected_term in zip(eq, expected):
+        assert eq_term == pytest.approx(expected_term * ratio)
+
+
+def test_plane_intersection_line():
+    p1 = Point(1, -2, 0)
+    p2 = Point(3, 1, 4)
+    p3 = Point(0, -1, 2)
+    p = Plane(p1, p2, p3)
+
+    l = Line(Point(0,0,0), Vector(1,0,0))
+    intersection = p.intersection(l)
+    expected = Point(9, 0, 0)
+
+    assert intersection is not None
+    assert (intersection - expected).length() == pytest.approx(0)
+
+
+@pytest.mark.parametrize("segment,expected",
+                         [(Segment(Point(0, 0, 0), Point(10, 0, 0)), Point(9, 0, 0)),
+                          (Segment(Point(0, 0, 0), Point(8, 0, 0)), None),
+                          (Segment(Point(10, 0, 0), Point(100, 0, 0)), None)
+                         ])
+def test_plane_intersection_segment(segment, expected):
+    p1 = Point(1, -2, 0)
+    p2 = Point(3, 1, 4)
+    p3 = Point(0, -1, 2)
+    p = Plane(p1, p2, p3)
+
+    intersection = p.intersection(segment)
+
+    if expected is None:
+        assert intersection is None
+    else:
+        assert intersection is not None
+        assert (intersection - expected).length() == pytest.approx(0)
+
+
+def test_plane_intersection_parallel():
+    p1 = Point(1, -2, 0)
+    p2 = Point(3, 1, 4)
+    p3 = Point(0, -1, 2)
+    p = Plane(p1, p2, p3)
+
+    parallel = p2 - p1
+
+    # Line
+    p0 = Point(0, 0, 0,)
+    l = Line(p0, parallel)
+    assert p.intersection(l) is None
+
+    # Segment
+    s = Segment(p0, p0 + parallel)
+    assert p.intersection(s) is None
+
+
+def test_plane_intersection_error():
+    p1 = Point(1, -2, 0)
+    p2 = Point(3, 1, 4)
+    p3 = Point(0, -1, 2)
+    p = Plane(p1, p2, p3)
+
+    with pytest.raises(TypeError):
+        p.intersection(Point(0, 0, 0))  # type: ignore
+
+
+# Parallelogram3D
+def test_parallelogram3d():
+    p0 = Point(1, -2, 0)
+    adj1 = Point(3, 1, 4)
+    adj2 = Point(0, -1, 2)
+    p = Parallelogram3d(p0, adj1, adj2)
+    assert p.p0 == p0
+    assert p.adj1 == adj1
+    assert p.adj2 == adj2
+
+    # check repr string
+    p_repr = eval(str(p))
+    assert p == p_repr
+
+
+@pytest.mark.parametrize("test_parallelogram3d,result",
+                         [(Parallelogram3d(Point(1, -2, 0), Point(3, 1, 4), Point(0, -1, 2)), True),
+                          (Parallelogram3d(Point(1, -2, 0),
+                           Point(0, -1, 2), Point(3, 1, 4)), True),
+                          (Parallelogram3d(Point(0, -1, 2),
+                           Point(1, -2, 0), Point(2, 2, 6)), True),
+                          (Parallelogram3d(Point(0, 0, 0), Point(
+                              1, 0, 0), Point(0, 1, 0)), False)
+                          ])
+def test_parallelogram3d_equals(test_parallelogram3d, result):
+    p0 = Point(1, -2, 0)
+    adj1 = Point(3, 1, 4)
+    adj2 = Point(0, -1, 2)
+    p = Parallelogram3d(p0, adj1, adj2)
+
+    assert (p == test_parallelogram3d) == result
+
+
+def test_parallelogram3d_equals_raise():
+    p0 = Point(1, -2, 0)
+    adj1 = Point(3, 1, 4)
+    adj2 = Point(0, -1, 2)
+    p = Parallelogram3d(p0, adj1, adj2)
+
+    with pytest.raises(TypeError):
+        assert p == Point(0, 0, 0)
+
+
+@pytest.mark.parametrize("segment,expected",
+                         [(Segment(Point(3, -1, 2), Point(3, 1, 2)), Point(3, 0, 2)),
+                          (Segment(Point(3, -2, 2), Point(3, -1, 2)), None),
+                          (Segment(Point(5, -1, 2), Point(5, 1, 2)), None),
+                          (Segment(Point(3, -2, 2), Point(3, -1, 2)), None),
+                          (Segment(Point(1, -2, -2), Point(1, -2, 5)), None),
+                          (Segment(Point(0, 0, 0), Point(0, 0, 0)), Point(0, 0, 0))
+                          ])
+def test_parallelogram3d_intersection_segment(segment, expected):
+    p0 = Point(0, 0, 0)
+    adj1 = Point(3, 0, 0)
+    adj2 = Point(2, 0, 4)
+    p = Parallelogram3d(p0, adj1, adj2)
+
+    intersection = p.intersection(segment)
+
+    if expected is None:
+        assert intersection is None
+    else:
+        assert intersection is not None
+        assert (intersection - expected).length() == pytest.approx(0)
+
+
+def test_parallelogram3d_intersection_error():
+    p0 = Point(1, -2, 0)
+    adj1 = Point(3, 1, 4)
+    adj2 = Point(0, -1, 2)
+    p = Parallelogram3d(p0, adj1, adj2)
+
+    with pytest.raises(TypeError):
+        p.intersection(Point(0, 0, 0))  # type: ignore
+
+
+def test_parallelogram3d_in_parallelogram():
+    # test from bugfix
+    p0 = Point(3.94616, 2.8, 0.0)
+    adj1 = Point(3.94616, 3.2, 0.0)
+    adj2 = Point(3.94616, 2.8, 1.7)
+    par = Parallelogram3d(p0, adj1, adj2)
+
+    point = Point(3.9461599999999994, 3.0, 1.6)
+    assert par.in_parallelogram(point)
+
+
 # functions
 @pytest.mark.parametrize("p,ll,proj_expected,t_expected",
                          [(Point(0, 0, 0), Line(Point(0, 1, 0), Vector(1, 0, 0)), Point(0, 1, 0), 0),
                           (Point(0, 0, 0), Line(Point(10, 1, 0), Vector(1, 0, 0)), Point(0, 1, 0), -10),
                           (Point(0, 0, 0), Line(Point(10, 1, 0), Vector(-1, 0, 0)), Point(0, 1, 0), 10),
                           (Point(0, 0, 0), Line(Point(10, 1, 0), Vector(-10, 0, 0)), Point(0, 1, 0), 1)])
-def test_project(p, ll, proj_expected, t_expected):
+def test_project_on_line(p, ll, proj_expected, t_expected):
     proj, t = project(p, ll)
-    assert type(proj) == Point
+    assert isinstance(proj, Point)
+    assert (proj - proj_expected).length() == pytest.approx(0)
+    assert t == pytest.approx(t_expected)
+
+
+@pytest.mark.parametrize("p,pp,proj_expected,t_expected",
+                         [(Point(0, 0, 0), Plane(Point(0, 1, 0), Point(1, 0, 0), Point(0,1,1)), Point(1/2, 1/2, 0), np.sqrt(2)/2),
+                          (Point(0, 0, 0), Plane(Point(0, 1, 0), Point(1, 0, 0), Point(0,0,1)), Point(1/3, 1/3, 1/3), np.sqrt(3)/3),
+                          (Point(0, 0, 0), Plane(Point(10, 1, 0), Point(10, -1, 0), Point(10, 1, 1)), Point(10, 0, 0), 10),
+                          (Point(0, 0, 0), Plane(Point(10, 1, -1), Point(10, -1, -1), Point(-10, 1, -1)), Point(0, 0, -1), 1),
+                          (Point(0, 0, 0), Plane(Point(10, 1, 0), Point(-10, 1, 0), Point(10, 1, 1)), Point(0, 1, 0), 1)])
+def test_project_on_plane(p, pp, proj_expected, t_expected):
+    proj, t = project(p, pp)
+    assert isinstance(proj, Point)
     assert (proj - proj_expected).length() == pytest.approx(0)
     assert t == pytest.approx(t_expected)
 
 
 def test_distance():
-    p = Point(0, 0, 0)
+    point = Point(0, 0, 0)
 
     # Point to point
     p2 = Point(1, 1, 1)
-    assert distance(p, p2) == pytest.approx((p - p2).length())
+    assert distance(point, p2) == pytest.approx((point - p2).length())
 
     # Point to Line
     ll = Line(Point(1, 1, 0), Vector(1, 0, 0))
-    proj, _ = project(p, ll)
-    assert distance(p, ll) == pytest.approx((p - proj).length())
+    proj, _ = project(point, ll)
+    assert distance(point, ll) == pytest.approx((point - proj).length())
 
     # Point to Segment
     s = Segment(Point(1, 1, 0), Point(10, 1, 0))
-    assert distance(p, s) == pytest.approx((p - s.start).length())
+    assert distance(point, s) == pytest.approx((point - s.start).length())
     s = Segment(Point(-10, 1, 0), Point(-1, 1, 0))
-    assert distance(p, s) == pytest.approx((p - s.end).length())
+    assert distance(point, s) == pytest.approx((point - s.end).length())
     s = Segment(Point(-10, 1, 0), Point(10, 1, 0))
-    assert distance(p, s) == pytest.approx((p - Point(0, 1, 0)).length())
+    assert distance(point, s) == pytest.approx((point - Point(0, 1, 0)).length())
+
+    # Point to Plane
+    plane = Plane(Point(1, -2, 0), Point(3, 1, 4), Point(0, -1, 2))
+    assert distance(point, plane) == pytest.approx(18 / math.sqrt(93))
+    plane = Plane(Point(0, 0, 0), Point(3, 1, 4), Point(0, -1, 2))
+    assert distance(point, plane) == pytest.approx(0)
 
     # Distance with anything else: error
     with pytest.raises(TypeError):
-        distance(p, Vector(0, 0, 0))  # type: ignore
+        distance(point, Vector(0, 0, 0))  # type: ignore
+
+
+@pytest.mark.parametrize("p, translation, rotation, expected_p1",
+                         [(Point(10, -2, 5), Vector(0, 0, 0), (Vector(1,0,0), Vector(0,1,0), Vector(0,0,1)), Point(10, -2, 5)),  # identity
+                          (Point(0, 0, 0), Vector(1, 1, 1), (Vector(1,0,0), Vector(0,1,0), Vector(0,0,1)), Point(-1, -1, -1)),  # positive translation of origin
+                          (Point(0, 0, 0), Vector(-1, -1, -1), (Vector(1,0,0), Vector(0,1,0), Vector(0,0,1)), Point(1, 1, 1)),  # negative translation of origin
+                          (Point(0, 0, 0), Vector(0, 0, 0), (Vector(1,0,0), Vector(0,1/np.sqrt(2),-1/np.sqrt(2)), Vector(0,1/np.sqrt(2),1/np.sqrt(2))), Point(0, 0, 0)),  # 45 deg rotation on x axis, origin
+                          (Point(0, 0, 0), Vector(0, 0, 0), (Vector(-1/np.sqrt(2),0,1/np.sqrt(2)), Vector(0,1,0), Vector(1/np.sqrt(2),0,1/np.sqrt(2))), Point(0, 0, 0)),  # 45 deg rotation on y axis, origin
+                          (Point(0, 0, 0), Vector(0, 0, 0), (Vector(1/np.sqrt(2),1/np.sqrt(2),0), Vector(-1/np.sqrt(2),1/np.sqrt(2),0), Vector(0,0,1)), Point(0, 0, 0)),  # 45 deg rotation on z axis, origin
+                          (Point(10, -2, 5), Vector(0, 0, 0), (Vector(1,0,0), Vector(0,1/np.sqrt(2),-1/np.sqrt(2)), Vector(0,1/np.sqrt(2),1/np.sqrt(2))), Point(10, -np.sqrt(2)/2*(5+2), np.sqrt(2)/2*(5-2))),  # 45 deg rotation on x axis, origin
+                          ])
+def test_TransfMatrix(p, translation, rotation, expected_p1):
+    tf = TransfMatrix(translation_vec=translation, rotation_basis=rotation)
+
+    p1 = tf.change_coord_syst(p)
+
+    assert distance(expected_p1, p1) == pytest.approx(0)

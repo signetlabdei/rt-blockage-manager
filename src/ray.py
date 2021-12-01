@@ -1,4 +1,6 @@
 # AUTHOR(S):
+# Paolo Testolina <paolo.testolina@dei.unipd.it>
+# Alessandro Traspadini <alessandro.traspadini@dei.unipd.it>
 # Mattia Lecci <mattia.lecci@dei.unipd.it>
 #
 # University of Padova (UNIPD), Italy
@@ -57,7 +59,10 @@ class Ray:
         s = geom.Segment(self.vertices[-2], self.vertices[-1])
         return s.aoa_elevation()
 
-    def __eq__(self, o: 'Ray') -> bool:
+    def __eq__(self, o: object) -> bool:
+        if not isinstance(o, Ray):
+            raise TypeError(f"{type(o)=}")
+
         if self.delay != o.delay:
             return False
         if self.path_gain != o.path_gain:

@@ -1,4 +1,6 @@
 # AUTHOR(S):
+# Paolo Testolina <paolo.testolina@dei.unipd.it>
+# Alessandro Traspadini <alessandro.traspadini@dei.unipd.it>
 # Mattia Lecci <mattia.lecci@dei.unipd.it>
 #
 # University of Padova (UNIPD), Italy
@@ -20,6 +22,7 @@ import shutil
                           ('scenarios/WorkingScenario2', 2, 1, 60e9, 1, 1),
                           ('scenarios/WorkingScenario3', 2, 1, 60e9, 1, 1),
                           ('scenarios/WorkingScenario4', 2, 1, 60e9, 5, 0.2),
+                          ('scenarios/HumanPresence', 2, 5.1, 60e9, 1500, 3.4*10**-3),
                           ('scenarios/Indoor1', 3, 0, 60e9, 1, 0)])
 def test_qd_realization_scenario(scenario_path, nodes, duration, freq, time_steps, time_step_duration):
     s = QdRealizationScenario(scenario_path)
@@ -59,6 +62,37 @@ def test_get_channel():
     assert isinstance(ch[0], Ray)
 
 
+def test_scenario_eq():
+    scenario_path = "scenarios/WorkingScenario1"
+    s1 = QdRealizationScenario(scenario_path)
+    s2 = QdRealizationScenario(scenario_path)
+    assert s1 == s2
+
+    ch = s2.get_channel(0, 1)
+    ch[0][0].path_gain += 10
+    s2.set_channel(0, 1, ch)
+
+    assert s1 != s2
+
+    s2 = QdRealizationScenario("scenarios/WorkingScenario2")
+    assert s1 != s2
+
+    # test same scenario, different _other_files
+    out_folder = f"tmp_{datetime.now()}"
+    try:
+        shutil.copytree(scenario_path, out_folder)
+        open(os.path.join(out_folder, 'tmpfile'), 'w').close()
+
+        s2 = QdRealizationScenario(out_folder)
+        assert s1 != s2
+    finally:
+        shutil.rmtree(out_folder)
+
+    
+    with pytest.raises(TypeError):
+        s1 == 2
+    
+
 @pytest.mark.parametrize("scenario_path",
                          ["scenarios/WorkingScenario1",
                           "scenarios/WorkingScenario2",
@@ -66,6 +100,7 @@ def test_get_channel():
                           "scenarios/WorkingScenario4",
                           "scenarios/WorkingScenario5",
                           "scenarios/WorkingScenario6",
+                          "scenarios/HumanPresence",
                           "scenarios/Indoor1"])
 def test_basic_export(scenario_path):
     s1 = QdRealizationScenario(scenario_path)
@@ -74,40 +109,15 @@ def test_basic_export(scenario_path):
     try:
         s1.export(out_folder, precision=6, do_export_mpc_coords=True)
         s2 = QdRealizationScenario(out_folder)
-        _compare_scenarios_equal(s1, s2)
+        assert s1 == s2
 
         # Test re-write on same output folder multiple times
         s2.export(out_folder, precision=6, do_export_mpc_coords=True)
         s3 = QdRealizationScenario(out_folder)
-        _compare_scenarios_equal(s1, s3)
+        assert s1 == s3
 
     finally:
         shutil.rmtree(out_folder)
-
-
-def _compare_scenarios_equal(s1: QdRealizationScenario, s2: QdRealizationScenario) -> None:
-    # The exported scenario should be the same as the original one
-    assert s1._cfg == s2._cfg
-
-    n_nodes1 = s1.get_num_nodes()
-    n_nodes2 = s2.get_num_nodes()
-    assert n_nodes1 == n_nodes2
-
-    t1 = s1.get_time_steps()
-    t2 = s2.get_time_steps()
-    assert t1 == t2
-
-    for tx in range(n_nodes1):
-        for rx in range(n_nodes1):
-            if tx == rx:
-                continue
-
-            for t in range(t1):
-                ch1 = s1.get_channel(tx, rx, t)
-                ch2 = s2.get_channel(tx, rx, t)
-
-                for r1, r2 in zip(ch1, ch2):
-                    assert r1 == r2
 
 
 @pytest.mark.parametrize("scenario_path",
@@ -117,6 +127,7 @@ def _compare_scenarios_equal(s1: QdRealizationScenario, s2: QdRealizationScenari
                           "scenarios/WorkingScenario4",
                           "scenarios/WorkingScenario5",
                           "scenarios/WorkingScenario6",
+                          "scenarios/HumanPresence",
                           "scenarios/Indoor1"])
 def test_export_copy_other_files(scenario_path):
     s = QdRealizationScenario(scenario_path)
@@ -136,22 +147,48 @@ def test_export_overwrite_other_files():
     s = QdRealizationScenario("scenarios/WorkingScenario1")
 
     out_folder = f"tmp_{datetime.now()}"
-    
+
     # create ficticious colliding file
     os.makedirs(out_folder, exist_ok=False)
     with open(os.path.join(out_folder, "scenario"), 'wt') as f:
         f.write("ficticious!")
-    
+
     try:
         s.export(out_folder, precision=6,
                  do_export_mpc_coords=True,
                  do_copy_unnecessary_files=True)
-        
+
         assert os.path.exists(os.path.join(out_folder, "scenario"))
 
         with open(os.path.join(out_folder, "scenario"), 'rt') as f:
             line = f.readline()
             assert line != "ficticious!"
+
+    finally:
+        shutil.rmtree(out_folder)
+
+
+@pytest.mark.parametrize("scenario_path",
+                         ["scenarios/WorkingScenario1",
+                          "scenarios/WorkingScenario2",
+                          "scenarios/WorkingScenario3",
+                          "scenarios/WorkingScenario4",
+                          "scenarios/WorkingScenario5",
+                          "scenarios/WorkingScenario6",
+                          "scenarios/HumanPresence",
+                          "scenarios/Indoor1"])
+def test_export_identical_to_input(scenario_path):
+    s1 = QdRealizationScenario(scenario_path)
+
+    out_folder = f"tmp_{datetime.now()}"
+    try:
+        s1.export(out_folder, precision=6,
+                  do_export_mpc_coords=True,
+                  do_copy_unnecessary_files=True)
+
+        s2 = QdRealizationScenario(out_folder)
+
+        assert s1 == s2
 
     finally:
         shutil.rmtree(out_folder)

@@ -1,4 +1,6 @@
 # AUTHOR(S):
+# Paolo Testolina <paolo.testolina@dei.unipd.it>
+# Alessandro Traspadini <alessandro.traspadini@dei.unipd.it>
 # Mattia Lecci <mattia.lecci@dei.unipd.it>
 # 
 # University of Padova (UNIPD), Italy
@@ -71,9 +73,12 @@ class ConstantAccelerationMobilityModel(MobilityModel):
 
 
 class RandomWaypointMobilityModel(MobilityModel):
-    def __init__(self, bounding_box: Rectangle, position_allocation: PositionAllocation,
+    def __init__(self,
+                 bounding_box: Rectangle,
+                 position_allocation: PositionAllocation,
                  speed_rv: Callable[[], float],
-                 pause_rv: Callable[[], float], start_position: Optional[Point] = None):
+                 pause_rv: Callable[[], float] = lambda: 0,
+                 start_position: Optional[Point] = None):
         self._bounding_box = bounding_box
         self._position_allocator = position_allocation
         self._speed_rv = speed_rv
@@ -134,8 +139,10 @@ class RandomWaypointMobilityModel(MobilityModel):
 
 
 class WaypointMobilityModel(MobilityModel):
-    def __init__(self, positions: Sequence[Point], speeds: Union[Sequence[float], float],
-                 pauses: Union[Sequence[float], float]):
+    def __init__(self,
+                 positions: Sequence[Point],
+                 speeds: Union[Sequence[float], float],
+                 pauses: Union[Sequence[float], float] = 0):
         # setup object so that speeds and pauses are lists of length len(postitions)-1
         self._positions = positions
 

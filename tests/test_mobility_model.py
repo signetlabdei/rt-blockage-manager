@@ -1,4 +1,6 @@
 # AUTHOR(S):
+# Paolo Testolina <paolo.testolina@dei.unipd.it>
+# Alessandro Traspadini <alessandro.traspadini@dei.unipd.it>
 # Mattia Lecci <mattia.lecci@dei.unipd.it>
 # 
 # University of Padova (UNIPD), Italy
@@ -70,7 +72,7 @@ def test_random_waypoint_mobility_model():
     # Just check location at 100 consecutive time steps
     for t in range(0, 100, 1):
         p = mm.location(t)
-        assert type(p) == Point
+        assert isinstance(p, Point)
 
 
 # WaypointMobilityModel
