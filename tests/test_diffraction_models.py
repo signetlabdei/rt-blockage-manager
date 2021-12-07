@@ -285,10 +285,10 @@ def test_empirical_itu_diffraction_close2node():
     assert d==pytest.approx(0)
 
     segment = Segment(Point(0, 0, 0), Point(0, 10, 0))
-    with pytest.raises(AssertionError):
-        d = diffraction_model(screen=screen,
-                    seg=segment,
-                    wavelength=wavelength)
+    d = diffraction_model(screen=screen,
+                seg=segment,
+                wavelength=wavelength)
+    assert d == pytest.approx(-20*np.log10(0.5))
 
 
 def test_empirical_itu_diffraction_edge_on_node():
@@ -302,10 +302,10 @@ def test_empirical_itu_diffraction_edge_on_node():
 
     segment = Segment(Point(top_left.x, 0.0, 0.0), Point(top_left.x, 10, 0.0))
 
-    with pytest.raises(AssertionError):
-        d = diffraction_model(screen=screen,
-                    seg=segment,
-                    wavelength=wavelength)
+    d = diffraction_model(screen=screen,
+                seg=segment,
+                wavelength=wavelength)
+    assert d == pytest.approx(-20*np.log10(0.5))
 
 
 def test_atan_itu_diffraction_edge_on_node():

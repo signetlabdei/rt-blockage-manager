@@ -27,8 +27,10 @@ def empirical_itu(screen: geom.Parallelogram3d, seg: geom.Segment, wavelength: f
     if O is None:  # ray parallel to plane. No diffraction.
         return 0.0
 
-    assert not R==O, f"Corner case: obstacle too close to R ({R} m)." 
-    assert not T==O, f"Corner case: obstacle too close to T ({T} m)." 
+    if R==O or T==O:
+        Warning(f"Corner case: obstacle too close to edge.")
+        ea = 1/2  # handle corner case as in ITU-R P.526-15 (10/2019), Sec. 4.1
+        return -20*np.log10(abs(1.0-ea))
 
     ux = (screen.adj1-screen.p0).normalize()
     uy = (screen.adj2-screen.p0).normalize()
