@@ -230,7 +230,7 @@ class OrthoScreenObstacle(Obstacle):
             proj, _ = geom.project(bottom_center, ray_line)  # make the obstacle's plane orthogonal to the bottom_center-ray_line segment
             obs_ray_vector = proj-bottom_center
             if obs_ray_vector.length()>0:
-                base_vector = z_vector.cross().normalize()
+                base_vector = z_vector.cross(obs_ray_vector).normalize()
             else:
                 base_vector = geom.Vector(1,0,0)  # if ray_line belongs to the plane of the obstacle, obs_ray_vector is a null vector. Align to x-axis
 

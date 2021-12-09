@@ -12,7 +12,7 @@
 import functools
 from src.diffraction_models import atan_diffraction, dke_kunisch
 from src.obstacle import OrthoScreenObstacle, SphereObstacle
-from src.geometry import Line, Point, Segment, project
+from src.geometry import Line, Point, Segment, distance, project
 from src.mobility_model import ConstantPositionMobilityModel
 from src.ray import Ray
 import pytest
@@ -223,3 +223,18 @@ def test_ortho_screen_obstacle_diffraction(diffraction_model):
     # far away ray
     r = Segment(Point(-10, 1e100, 1), Point(10, 1e100, 1))
     assert o.diffraction_loss(r) == pytest.approx(0)
+
+
+def test_ortho_screen_obstacle_vertical_segment():
+    o = OrthoScreenObstacle(mm=ConstantPositionMobilityModel(Point(0, 0, 0)),
+                            width=0.7,
+                            height=1.8,
+                            reflection_loss=5,
+                            transmission_loss=30,
+                            diffraction_loss_model=None,
+                            distance_threshold=0)
+
+    segment = Segment(Point(10, 0, 0), Point(10, 0, 1))
+    par = o._get_ortho_screen(segment)
+    d_expected = 10
+    assert distance(segment.start,par.plane)==distance(segment.end,par.plane)==pytest.approx(d_expected)
