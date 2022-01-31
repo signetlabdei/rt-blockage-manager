@@ -14,6 +14,7 @@ from src.geometry import Point, Vector, Rectangle
 from typing import Optional, Callable, Sequence, Union
 from collections.abc import Sequence as SequenceAbc
 import logging
+import math
 
 import numpy as np
 
@@ -23,6 +24,21 @@ class MobilityModel(ABC):
     def location(self, t: float) -> Point:
         """
         Location Point at time t
+        """
+    def get_azim_angle(self, t: float, angle_unit : str = 'rad') -> float:
+        """
+        Location Point at time t
+        """
+    def get_elev_angle(self, t: float, angle_unit : str = 'rad') -> float:
+        """
+        Location Point at time t
+        """
+
+class AngularMobilityModel(ABC):
+    @abstractmethod
+    def get_angle(self, t: float, angle_unit: str) -> float:
+        """
+        Angle at time t
         """
 
 
@@ -37,36 +53,108 @@ class PositionAllocation:
 
 
 class ConstantPositionMobilityModel(MobilityModel):
-    def __init__(self, pos: Point):
+    def __init__(self, pos: Point, angle_azim: float = 0, velocity_azim: float = 0,
+                 acceleration_azim: float = 0, angle_elev: float = 0, velocity_elev: float = 0,
+                 acceleration_elev: float = 0, angle_unit: str = 'rad'):
+
         self._pos = pos
+
+        self._elev_mm = get_angular_mobility_model(acceleration=acceleration_elev,velocity=velocity_elev,
+                                                   angle =angle_elev,angle_unit=angle_unit)
+                                                                    
+                                                                    
+        self._azim_mm = get_angular_mobility_model(acceleration=acceleration_azim,velocity=velocity_azim,
+                                                   angle=angle_azim,angle_unit=angle_unit)
 
     def location(self, t: float) -> Point:
         return self._pos
+    
+    def get_elev_mm(self):
+        return self._elev_mm
+    
+    def get_azim_mm(self):
+        return self._azim_mm
+
+    def get_elev_angle(self, t: float, angle_unit: str = 'rad') -> float:
+        if self._elev_mm is None:
+            return 0
+        
+        return self._elev_mm.get_angle(t, angle_unit=angle_unit)
+
+    def get_azim_angle(self, t: float, angle_unit: str = 'rad') -> float:
+        if self._azim_mm is None:
+            return 0
+    
+        return self._azim_mm.get_angle(t, angle_unit=angle_unit)
 
     def __repr__(self) -> str:
         return f"ConstantPositionMobilityModel({self._pos})"
 
 
 class ConstantVelocityMobilityModel(MobilityModel):
-    def __init__(self, start_pos: Point, vel: Vector):
+    def __init__(self, start_pos: Point, vel: Vector, angle_azim: float = 0, velocity_azim: float = 0,
+                 acceleration_azim: float = 0, angle_elev: float = 0, velocity_elev: float = 0,
+                 acceleration_elev: float = 0, angle_unit: str = 'rad'):
+
         self._start_pos = start_pos
         self._vel = vel
+        
+        self._elev_mm = get_angular_mobility_model(acceleration=acceleration_elev,velocity=velocity_elev,
+                                                   angle =angle_elev,angle_unit=angle_unit)
+                                                                    
+                                                                    
+        self._azim_mm = get_angular_mobility_model(acceleration=acceleration_azim,velocity=velocity_azim,
+                                                   angle=angle_azim,angle_unit=angle_unit)
 
     def location(self, t: float) -> Point:
         return self._start_pos + t * self._vel
+
+    def get_elev_angle(self, t: float, angle_unit: str = 'rad') -> float:
+        if self._elev_mm == None:
+            return 0
+
+        return self._elev_mm.get_angle(t, angle_unit=angle_unit)
+
+    def get_azim_angle(self, t: float, angle_unit: str = 'rad') -> float:
+        if self._azim_mm == None:
+            return 0
+
+        return self._azim_mm.get_angle(t, angle_unit=angle_unit)
 
     def __repr__(self) -> str:
         return f"ConstantVelocityMobilityModel({self._start_pos},{self._vel})"
 
 
 class ConstantAccelerationMobilityModel(MobilityModel):
-    def __init__(self, start_pos: Point, vel: Vector, accel: Vector):
+    def __init__(self, start_pos: Point, vel: Vector, accel: Vector, angle_azim: float = 0,
+                 velocity_azim: float = 0, acceleration_azim: float = 0, angle_elev: float = 0,
+                 velocity_elev: float = 0, acceleration_elev: float = 0, angle_unit: str = 'rad'):
+        
         self._start_pos = start_pos
         self._vel = vel
         self._accel = accel
 
+        self._elev_mm = get_angular_mobility_model(acceleration=acceleration_elev,velocity=velocity_elev,
+                                                   angle =angle_elev,angle_unit=angle_unit)
+                                                                    
+                                                                    
+        self._azim_mm = get_angular_mobility_model(acceleration=acceleration_azim,velocity=velocity_azim,
+                                                   angle=angle_azim,angle_unit=angle_unit)
+
     def location(self, t: float) -> Point:
         return self._start_pos + t * self._vel + 0.5 * t ** 2 * self._accel
+
+    def get_elev_angle(self, t: float, angle_unit: str = 'rad') -> float:
+        if self._elev_mm == None:
+            return 0
+        
+        return self._elev_mm.get_angle(t, angle_unit = angle_unit)
+
+    def get_azim_angle(self, t: float, angle_unit: str = 'rad') -> float:
+        if self._azim_mm == None:
+            return 0
+        
+        return self._azim_mm.get_angle(t, angle_unit=angle_unit)
 
     def __repr__(self) -> str:
         return f"ConstantAccelerationMobilityModel({self._start_pos},{self._vel},{self._accel})"
@@ -195,6 +283,22 @@ class WaypointMobilityModel(MobilityModel):
     def max_mobility_duration(self):
         return self._start_time_pos[-1]
 
+def get_angular_mobility_model(acceleration:float,velocity:float,angle:float,angle_unit:str='str'):
+    
+    if acceleration != 0:
+        angular_mm = ConstantAngularAccelerationMobilityModel(angle = angle, velocity = velocity,
+                                                acceleration = acceleration, angle_unit= angle_unit)
+    elif velocity != 0:
+        angular_mm = ConstantAngularVelocityMobilityModel(angle = angle, velocity = velocity,
+                                                angle_unit = angle_unit)
+    elif angle != 0:
+        angular_mm = ConstantAngularPositionMobilityModel(angle = angle, angle_unit = angle_unit)
+    else:
+        angular_mm = None
+    
+    return angular_mm
+
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.WARN)
@@ -215,3 +319,59 @@ if __name__ == '__main__':
         if time > wmm.max_mobility_duration():
             break
         print(time, wmm.location(time))
+
+# Angular Mobility Models
+
+class ConstantAngularPositionMobilityModel(AngularMobilityModel):
+    def __init__(self, angle: float, angle_unit: str = 'deg'):
+        self._rad_angle = check_angle_unit_init(value=angle,angle_unit=angle_unit)
+
+    def get_angle(self, t: float, angle_unit: str = 'deg') -> float:
+        return check_returned_angle_unit(value=self._rad_angle,angle_unit=angle_unit)
+
+    def __repr__(self) -> str:
+        return f"ConstantAngularPositionMobilityModel({self._rad_angle})"
+
+
+class ConstantAngularVelocityMobilityModel(AngularMobilityModel):
+    def __init__(self, angle: float, velocity: float,angle_unit: str = 'deg'):
+        
+        self._start_rad = check_angle_unit_init(value=angle,angle_unit=angle_unit)
+        self._ang_vel_rad = check_angle_unit_init(value=velocity,angle_unit=angle_unit) # angular velocity [rad/s]
+
+    def get_angle(self, t: float, angle_unit: str = 'deg') -> float:
+        computed_angle = self._start_rad + t * self._ang_vel_rad
+        return check_returned_angle_unit(value=computed_angle,angle_unit=angle_unit)
+
+    def __repr__(self) -> str:
+        return f"ConstantAngularVelocityMobilityModel({self._start_rad},{self._ang_vel_rad})"
+
+
+class ConstantAngularAccelerationMobilityModel(AngularMobilityModel):
+
+    def __init__(self, angle: float, velocity: float, acceleration: float,angle_unit: str = 'deg'):
+        
+        self._start_rad = check_angle_unit_init(value=angle,angle_unit=angle_unit)
+        self._ang_vel_rad = check_angle_unit_init(value=velocity,angle_unit=angle_unit) # angular velocity [rad/s]
+        self._ang_acc_rad = check_angle_unit_init(value=acceleration,angle_unit=angle_unit) # angular acceleration [rad/s^2]
+
+    def get_angle(self, t: float, angle_unit: str = 'deg') -> float:
+        computed_angle = self._start_rad + t * self._ang_vel_rad + 0.5 * t**2 * self._ang_acc_rad
+        return check_returned_angle_unit(value=computed_angle,angle_unit=angle_unit)
+
+    def __repr__(self) -> str:
+        return f"ConstantAngularAccelerationMobilityModel({self._start_rad},{self._ang_vel_rad},{self._ang_acc_rad})"
+
+def check_angle_unit_init(value:float,angle_unit:str)->float:
+    if angle_unit == 'deg':
+        return math.radians(value)
+    if angle_unit == 'rad':
+        return value
+    raise ValueError(f"angles can only be in 'deg' or 'rad', instead, {angle_unit=}")
+
+def check_returned_angle_unit(value:float,angle_unit:str)->float:
+    if angle_unit == 'deg':
+        return math.degrees(value)
+    if angle_unit == 'rad':
+        return value
+    raise ValueError(f"angles can only be in 'deg' or 'rad', instead, {angle_unit=}")

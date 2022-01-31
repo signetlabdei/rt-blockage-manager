@@ -392,15 +392,13 @@ class Parallelogram3d:
 
         self_v = self.get_vertices()
         o_v = list(o.get_vertices())
-        for vertex in self_v:
-            if vertex in o_v:
-                o_v.remove(vertex)
-            else:
-                return False
 
-        return len(o_v) == 0
-
-
+        common_vertices = [sv
+                                 for sv in self_v
+                                 for ov in o_v
+                                 if (sv-ov).length() < 1e-9]
+        return len(common_vertices) == 4
+    
     def get_vertices(self) -> Tuple[Point, Point, Point, Point]:
         p4 = self.adj1 + (self.adj2 - self.p0)
         return self.p0, self.adj1, self.adj2, p4

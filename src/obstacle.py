@@ -47,7 +47,7 @@ class Obstacle(ABC):
         """
 
     @abstractmethod
-    def diffraction_loss(self, r: geom.Segment) -> float:
+    def diffraction_loss(self, ray_segment: geom.Segment) -> float:
         """
         Diffraction loss [dB]
         """
@@ -304,6 +304,209 @@ class OrthoScreenObstacle(Obstacle):
 
     def __repr__(self):
         raise NotImplementedError
+
+
+class ScreenObstacle(Obstacle):
+
+    def __init__(self,
+                    mm: MobilityModel,
+                    width: float,
+                    height: float,
+                    base_vector: geom.Vector = geom.Vector(0,1,0),
+                    height_vector: geom.Vector = geom.Vector(0,0,1),
+                    reflection_loss: float = math.inf,
+                    transmission_loss: float = math.inf,
+                    diffraction_loss_model: Optional[Callable[[geom.Parallelogram3d, geom.Segment], float]] = None,
+                    distance_threshold: float = 0):
+        self._mm = mm
+
+        # base_vector and height_vector define respectively the directions of the geometrical structure
+        # of the obstacle(base and height), thus they need to be orthogonal for screen obstacles.
+
+        # check othogonality of base_vector and height_vector
+
+        assert base_vector.dot(height_vector) == 0, "given base_vector and height_vector are not orthogonal"
+        self._base_vector = base_vector
+        self._height_vector = height_vector
+        self._width = width
+        self._height = height
+        self._reflection_loss = reflection_loss
+        self._transmission_loss = transmission_loss
+        self._diffraction_loss_model = diffraction_loss_model
+        self._distance_threshold = distance_threshold
+
+        assert self._distance_threshold >= 0
+
+        self._last_update_t: float = 0.0
+
+    @property
+    def height(self) -> float:
+        return self._height
+
+    @property
+    def width(self) -> float:
+        return self._width
+
+    @property
+    def mobility_model(self) -> MobilityModel:
+        return self._mm
+
+    @property
+    def base_vector(self) -> geom.Vector:
+        return self._base_vector
+
+    @property
+    def height_vector(self) -> geom.Vector:
+        return self._height_vector
+
+
+    def update(self, t: float) -> None:
+        if t != self._last_update_t:
+            self._last_update_t = t
+
+
+    def location(self) -> geom.Point:
+        return self._mm.location(self._last_update_t)
+
+    def elevation_angle(self, angle_unit :str  = 'rad') -> float:
+        #get the elevation angle in rad
+        return self._mm.get_elev_angle(self._last_update_t, angle_unit = angle_unit)
+
+    def azimuth_angle(self, angle_unit :str  = 'rad') -> float:
+        #get the azimuth angle in rad
+        return self._mm.get_azim_angle(self._last_update_t, angle_unit=angle_unit)
+
+    def reflection_loss(self) -> float:
+        return self._reflection_loss
+
+    def transmission_loss(self) -> float:
+        return self._transmission_loss
+
+    def get_screen(self) -> geom.Parallelogram3d:
+
+        # start from the origin
+
+        origin = geom.Point(0,0,0)
+        bottom_center_origin = origin - self._height_vector * self._height / 2
+        p0 = bottom_center_origin - self.base_vector * self._width / 2
+        adj1 = p0 + self.base_vector * self._width
+        adj2 = p0 + self._height_vector * self._height
+
+        # elevation rotation
+
+        sin_elev = math.sin(self.elevation_angle())
+        cos_elev = math.cos(self.elevation_angle())
+        rot_axis = (p0-adj1).normalize()
+        rot_x = rot_axis.x
+        rot_y = rot_axis.y
+        rot_z = rot_axis.z
+
+        # Rotaton matrix R
+        R_elev = np.array([[rot_x**2 + (1-rot_x**2)*cos_elev , (1-cos_elev)*rot_x*rot_y - sin_elev * rot_z , (1-cos_elev)*rot_x*rot_z + sin_elev * rot_y],
+        [(1-cos_elev)*rot_x*rot_y + sin_elev*rot_z, rot_y**2 + (1-rot_y**2)*cos_elev, (1-cos_elev)*rot_y*rot_z-sin_elev * rot_x],
+        [(1-cos_elev)*rot_x*rot_z - sin_elev*rot_y, (1-cos_elev)*rot_y*rot_z + sin_elev * rot_x , rot_z**2 + (1-rot_z**2)*cos_elev]])
+
+        #Apply R to edge points
+        adj2 = R_elev @ [adj2.x,adj2.y,adj2.z]
+        adj2 = geom.Point(adj2[0],adj2[1],adj2[2])
+        adj1 = R_elev @ [adj1.x,adj1.y,adj1.z]
+        adj1 = geom.Point(adj1[0],adj1[1],adj1[2])
+        p0 = R_elev @ [p0.x,p0.y,p0.z]
+        p0 = geom.Point(p0[0],p0[1],p0[2])
+
+        # azimuth rotation
+
+        sin_azim = math.sin(self.azimuth_angle())
+        cos_azim = math.cos(self.azimuth_angle())
+        rot_axis = (p0-adj2).normalize()
+        rot_x = rot_axis.x
+        rot_y = rot_axis.y
+        rot_z = rot_axis.z
+
+        # Rotaton matrix R
+        R_azim = np.array([[rot_x**2 + (1-rot_x**2)*cos_azim , (1-cos_azim)*rot_x*rot_y - sin_azim * rot_z , (1-cos_azim)*rot_x*rot_z + sin_azim * rot_y],
+            [(1-cos_azim)*rot_x*rot_y + sin_azim*rot_z, rot_y**2 + (1-rot_y**2)*cos_azim, (1-cos_azim)*rot_y*rot_z-sin_azim * rot_x],
+            [(1-cos_azim)*rot_x*rot_z - sin_azim*rot_y, (1-cos_azim)*rot_y*rot_z + sin_azim * rot_x , rot_z**2 + (1-rot_z**2)*cos_azim]])
+
+        #Apply R to edge points
+        adj2 = R_azim @ [adj2.x,adj2.y,adj2.z]
+        adj1 = R_azim @ [adj1.x,adj1.y,adj1.z]
+        p0 = R_azim @ [p0.x,p0.y,p0.z]
+
+        # shift the tilted obstacle to its location
+
+        bottom_center = self.location()
+
+        shift_vector = [bottom_center.x-bottom_center_origin.x,bottom_center.y-bottom_center_origin.y,bottom_center.z-bottom_center_origin.z]
+        
+        adj2 = geom.Point(adj2[0] + shift_vector[0], adj2[1] + shift_vector[1], adj2[2] + shift_vector[2])
+        adj1 = geom.Point(adj1[0] + shift_vector[0], adj1[1] + shift_vector[1], adj1[2] + shift_vector[2])
+        p0 = geom.Point(p0[0] + shift_vector[0], p0[1] + shift_vector[1], p0[2] + shift_vector[2])
+
+
+        return geom.Parallelogram3d(p0, adj1, adj2)
+
+    def diffraction_loss(self, ray_segment: geom.Segment) -> float:
+        assert self._diffraction_loss_model is not None
+
+        screen = self.get_screen()
+        return self._diffraction_loss_model(screen, ray_segment)
+
+    def obstructs(self, r: Union[geom.Segment, Ray]) -> bool:
+        if type(r) is geom.Segment:
+            if abs(geom.distance(r.start, r.end))<1e-9:
+                # Support corner case: check
+                # https://github.com/signetlabdei/rt-blocakge-manager/issues/2
+                # for more information
+                return False
+            else:
+                return self.distance(r) <= self._distance_threshold
+
+        elif type(r) is Ray:
+            for p1, p2 in zip(r.vertices[:-1], r.vertices[1:]):
+                if abs(geom.distance(p1, p2))<1e-9:
+                    # Support corner case: check
+                    # https://github.com/signetlabdei/rt-blocakge-manager/issues/2
+                    # for more information
+                    continue
+
+                if self.obstructs(geom.Segment(p1, p2)):
+                    return True
+
+            return False
+
+        else:
+            raise TypeError(f"{type(r)}")
+
+    def distance(self, s: geom.Segment) -> float:
+        if not isinstance(s, geom.Segment):
+            raise TypeError(f"{type(s)}")
+
+        screen = self.get_screen()
+        if screen.intersection(s) is not None:
+            return 0
+
+        # else: no intersection
+        plane = geom.Plane(screen.p0, screen.adj1, screen.adj2)
+
+        intersection = plane.intersection(s)
+        if intersection is None:
+            # segment is parallel to plane
+            return math.inf  # TODO is this ok?
+
+        # segment intersects plane outside the rectangle
+        p0, p1, p2, p3 = screen.get_vertices()
+
+        d01 = geom.distance(intersection, geom.Segment(p0, p1))
+        d02 = geom.distance(intersection, geom.Segment(p0, p2))
+        d31 = geom.distance(intersection, geom.Segment(p3, p1))
+        d32 = geom.distance(intersection, geom.Segment(p3, p2))
+
+        return min(d01, d02, d31, d32)
+
+
+    def specular_reflection(self, pa: geom.Point, pb: geom.Point) -> Optional[geom.Point]:
+        raise NotImplementedError("Specular reflection not yet implemented")  # pragma: no cover
 
 
 if __name__ == '__main__':
