@@ -15,7 +15,7 @@ import numpy as np
 import pytest
 from scipy.special import fresnel
 
-from src.diffraction_models import atan_diffraction, dke_itu, fast_fresnel_integral, ske_itu, dke_kunisch, ske_kunisch, lateral_atan_diffraction, empirical_itu
+from src.diffraction_models import atan_diffraction, dke_geom_emp, dke_itu, fast_fresnel_integral, ske_itu, dke_kunisch, ske_kunisch, lateral_atan_diffraction, empirical_itu
 from src.geometry import Parallelogram3d, Point, Segment, Vector
 
 DEEP_SHADOW_MIN_LOSS = 100 # dB
@@ -165,11 +165,14 @@ def test_ske_kunisch(edge_dir:Vector, segment:Segment):
 @pytest.mark.parametrize("segment",
                          [(Segment(Point(1e100, -10, 1), Point(1e100, 10, 1))),  # right
                           (Segment(Point(-1e100, -10, 1), Point(-1e100, 10, 1))),  # left
-                          pytest.param(Segment(Point(0, -10, 1e100), Point(0, 10, 1e100)), marks=pytest.mark.xfail),  # above
-                          pytest.param(Segment(Point(0, -10, -1e100), Point(0, 10, -1e100)), marks=pytest.mark.xfail), # below
+                          pytest.param(Segment(Point(0, -10, 1e100), Point(0, 10, 1e100)), marks=pytest.mark.xfail(strict=True)),  # above
+                          pytest.param(Segment(Point(0, -10, -1e100), Point(0, 10, -1e100)), marks=pytest.mark.xfail(strict=True)), # below
                           (Segment(Point(1e100, -10, 1e100), Point(1e100, 10, 1e100))),  # above right
                           ])
-def test_dke_kunisch_very_far(segment:Segment):
+@pytest.mark.parametrize("diffraction_model",
+                        [dke_kunisch,
+                         dke_geom_emp])
+def test_dke_strip_very_far(segment:Segment, diffraction_model):
     bottom_right = Point(1, 0, 0)
     bottom_left = Point(-1, 0, 0)
     top_left = Point(-1, 0, 2)
@@ -177,7 +180,7 @@ def test_dke_kunisch_very_far(segment:Segment):
     wavelength = 1e-9
 
     # If ray is very far off the screen it should not create any significant amount of diffraction
-    d = dke_kunisch(screen=screen,
+    d = diffraction_model(screen=screen,
                    seg=segment,
                    wavelength=wavelength)
     assert d == pytest.approx(0)
@@ -186,14 +189,14 @@ def test_dke_kunisch_very_far(segment:Segment):
 @pytest.mark.parametrize("segment",
                          [(Segment(Point(1e100, -10, 1), Point(1e100, 10, 1))),  # right
                           (Segment(Point(-1e100, -10, 1), Point(-1e100, 10, 1))),  # left
-                          (Segment(Point(0, -10, 1e100), Point(0, 10, 1e100))),  # above
-                          (Segment(Point(0, -10, -1e100), Point(0, 10, -1e100))), # below
+                          pytest.param(Segment(Point(0, -10, 1e100), Point(0, 10, 1e100))),  # above
+                          pytest.param(Segment(Point(0, -10, -1e100), Point(0, 10, -1e100))), # below
                           (Segment(Point(1e100, -10, 1e100), Point(1e100, 10, 1e100))),  # above right
                           ])
 @pytest.mark.parametrize("diffraction_model",
-                         [atan_diffraction,
+                        [atan_diffraction,
                          empirical_itu])
-def test_dke_very_far(segment:Segment, diffraction_model):
+def test_dke_screen_very_far(segment:Segment, diffraction_model):
     bottom_right = Point(1, 0, 0)
     bottom_left = Point(-1, 0, 0)
     top_left = Point(-1, 0, 2)
@@ -211,7 +214,8 @@ def test_dke_very_far(segment:Segment, diffraction_model):
                          [atan_diffraction,
                          atan_diffraction,
                          empirical_itu,
-                         dke_kunisch])
+                         dke_kunisch,
+                         dke_geom_emp])
 def test_dke_deep_shadow(diffraction_model):
     screen_size = 1e10
     bottom_right = Point(screen_size / 2, 0, -screen_size / 2)
@@ -227,15 +231,11 @@ def test_dke_deep_shadow(diffraction_model):
                    wavelength=wavelength)
     assert d > DEEP_SHADOW_MIN_LOSS
 
-    d = dke_kunisch(screen=screen,
-                   seg=segment,
-                   wavelength=wavelength)
-    assert d > DEEP_SHADOW_MIN_LOSS
-
 
 @pytest.mark.parametrize("diffraction_model",
                          [atan_diffraction,
-                         dke_kunisch])
+                         dke_kunisch,
+                         dke_geom_emp])
 def test_diffraction_close2node(diffraction_model):
     screen_size = 10
     bottom_right = Point(screen_size / 2, 0, -screen_size / 2)

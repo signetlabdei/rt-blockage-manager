@@ -230,7 +230,8 @@ class WaypointMobilityModel(MobilityModel):
     def __init__(self,
                  positions: Sequence[Point],
                  speeds: Union[Sequence[float], float],
-                 pauses: Union[Sequence[float], float] = 0):
+                 pauses: Union[Sequence[float], float] = 0,
+                 start_delay: float= 0.0):
         # setup object so that speeds and pauses are lists of length len(postitions)-1
         self._positions = positions
 
@@ -252,7 +253,7 @@ class WaypointMobilityModel(MobilityModel):
                                                             self._positions[1:],
                                                             self._speeds,
                                                             self._pauses)]
-        self._start_time_pos = [0.0] + np.cumsum(segment_duration).tolist()
+        self._start_time_pos = [start_delay] + np.cumsum(segment_duration).tolist()
         self._current_pos_idx = 0
 
     def location(self, t: float) -> Point:

@@ -205,6 +205,34 @@ def lateral_atan_diffraction(p1: geom.Point, p2: geom.Point, seg: geom.Segment,
         f = max(f1, f2) - min(f1, f2)
     return f
 
+def _compute_ske_geometry(seg, edge_pos, edge_dir):
+    # Compute the h parameter (required by nu)
+    # - Recommendation ITU-R P.526-15 (10/2019): Propagation by diffraction, Sec. 4.1
+    # - J. Kunisch and J. Pamp, "Ultra-wideband double vertical knife-edge model
+    #   for obstruction of a ray by a person," 2008 IEEE International Conference
+    #   on Ultra-Wideband, Hannover, Germany, 2008, pp. 17-20,
+    #   doi: 10.1109/ICUWB.2008.4653341.
+    start = seg.start
+    end = seg.end
+    ray_dir = end - start  # direction of the considered ray
+
+    # project edge position on ray
+    proj, _ = geom.project(edge_pos, geom.Line(start, ray_dir))
+    edge_cross = edge_dir.cross(ray_dir)  # edge orientation
+    if abs(edge_cross.length()) < 1e-9:  # screen is parallel to seg
+        return 0.0
+    edge_cross = edge_cross.normalize()  # edge orientation
+
+    edge_proj, _ = geom.project(proj,
+                                geom.Line(edge_pos, edge_cross))  # project edge position on the infinitely long edge
+    # use edge projection on ray as reference for h
+    h = math.copysign(1, edge_dir.dot(proj - edge_proj)) * \
+        (edge_proj - proj).length()
+
+    dt = (edge_proj - start).length()  # ray bended around the edge (from TX to edge)
+    dr = (edge_proj - end).length()  # ray bended around the edge (from RX to edge)
+
+    return h, dt, dr
 
 def _compute_nu(h: float, d1: float, d2: float, wavelength: float) -> float:
     # Compute the diffraction parameter nu
@@ -225,24 +253,7 @@ def _compute_nu(h: float, d1: float, d2: float, wavelength: float) -> float:
 
 def ske_itu(edge_pos: geom.Point, edge_dir: geom.Vector, seg: geom.Segment, wavelength: float) -> float:
     # Recommendation ITU-R P.526-15 (10/2019): Propagation by diffraction, Sec. 4.1
-    start = seg.start
-    end = seg.end
-    los_dir = end - start
-
-    # project edge position on los
-    proj, _ = geom.project(edge_pos, geom.Line(start, los_dir))
-    edge_cross = edge_dir.cross(los_dir)  # edge orientation
-    if abs(edge_cross.length()) < 1e-9:  # screen is parallel to seg
-        return 0.0
-    edge_cross = edge_cross.normalize()  # edge orientation
-
-    edge_proj, _ = geom.project(proj,
-                                geom.Line(edge_pos, edge_cross))  # project edge position on the infinitely long edge
-    # use edge projection on los as reference for h
-    h = math.copysign(1, edge_dir.dot(proj - edge_proj)) * \
-        (edge_proj - proj).length()
-    d1 = (edge_proj - start).length()
-    d2 = (edge_proj - end).length()
+    h, d1, d2 = _compute_ske_geometry(seg, edge_pos, edge_dir)
     nu = _compute_nu(h,d1,d2,wavelength)
 
     fr = fast_fresnel_integral(nu)
@@ -301,28 +312,8 @@ def ske_kunisch(edge_pos: geom.Point, edge_dir: geom.Vector, seg: geom.Segment, 
     # for obstruction of a ray by a person," 2008 IEEE International Conference
     # on Ultra-Wideband, Hannover, Germany, 2008, pp. 17-20,
     # doi: 10.1109/ICUWB.2008.4653341.
-
-    # the obstacle is treated as an infinitely long vertical strip
-    start = seg.start
-    end = seg.end
-    los_dir = end - start
-
-    # project edge position on los
-    proj, _ = geom.project(edge_pos, geom.Line(start, los_dir))
-    edge_cross = edge_dir.cross(los_dir)
-    if abs(edge_cross.length()) < 1e-9:  # seg parallel to screen
-        return 0.0
-    edge_cross = edge_cross.normalize()  # edge orientation
-    
-    edge_proj, _ = geom.project(proj,
-                                geom.Line(edge_pos, edge_cross))  # project edge position on the infinitely long edge
-
-    # use edge projection on los as reference for ha
-    ha = math.copysign(1, edge_dir.dot(proj - edge_proj)) * \
-         (edge_proj - proj).length()
-    dt = (edge_proj - start).length()
-    dr = (edge_proj - end).length()
-    nu = _compute_nu(ha,dt,dr,wavelength)
+    h, d1, d2 = _compute_ske_geometry(seg, edge_pos, edge_dir)
+    nu = _compute_nu(h,d1,d2,wavelength)
 
     fr = fast_fresnel_integral(nu)
     c = fr.real
@@ -364,6 +355,50 @@ def dke_kunisch(screen: geom.Parallelogram3d, seg: geom.Segment, wavelength: flo
     db_gain = -20 * math.log10(abs(lin_gain))
     return db_gain
 
+
+def dke_geom_emp(screen: geom.Parallelogram3d, seg: geom.Segment, wavelength: float) -> float: 
+    # A. Bhardwaj, D. Caudill, C. Gentile, J. Chuang, J. Senic and D. G. Michelson, 
+    # "Geometrical-Empirical Channel Propagation Model for Human Presence at 60 GHz," 
+    # in IEEE Access, vol. 9, pp. 38467-38478, 2021,
+    # doi: 10.1109/ACCESS.2021.3063655.
+    bottom_left = screen.p0 
+    bottom_right = screen.adj1 
+    top_left = screen.adj2 
+ 
+    # Added to remove the diffraction effect when the obj is behind RX 
+    screen_plane = geom.Plane(bottom_left, bottom_right, top_left) 
+    screen_plane_intersec = screen_plane.intersection(seg) 
+    if screen_plane_intersec is None:  # screen-ray intersection is outside the ray 
+        return 0 
+ 
+    d_a = (seg.start-screen_plane_intersec).length() 
+    d_b = (seg.end-screen_plane_intersec).length() 
+    ampl = 1.0 # wavelength/(4*math.pi*(d_a+d_b)) 
+  
+    right_dir = (bottom_left - bottom_right) 
+ 
+    k_right = ske_kunisch(bottom_right, right_dir, seg, wavelength) 
+    k_left = ske_kunisch(bottom_left, -right_dir, seg, wavelength) 
+ 
+    exp_delta_right = _extract_geom_emp_params(bottom_right, right_dir, seg, wavelength, d_a, d_b) 
+    exp_delta_left = _extract_geom_emp_params(bottom_left, -right_dir, seg, wavelength, d_a, d_b) 
+     
+    lin_gain = ampl * (k_right*exp_delta_right + k_left*exp_delta_left) 
+    db_gain = -20 * math.log10(abs(lin_gain)) 
+    return db_gain    
+ 
+def _extract_geom_emp_params(edge_pos: geom.Point, edge_dir: geom.Vector, seg: geom.Segment, wavelength: float, d_a: float, d_b: float) -> float:
+    # Utility function to compute parameters for the Geometrical-Empirical model
+    # A. Bhardwaj, D. Caudill, C. Gentile, J. Chuang, J. Senic and D. G. Michelson, 
+    # "Geometrical-Empirical Channel Propagation Model for Human Presence at 60 GHz," 
+    # in IEEE Access, vol. 9, pp. 38467-38478, 2021,
+    # doi: 10.1109/ACCESS.2021.3063655.
+
+    h_n, d_a, d_b = _compute_ske_geometry(seg, edge_pos, edge_dir)
+    delta_n = math.sqrt(h_n**2+d_a**2) + math.sqrt(h_n**2+d_b**2) 
+    exp_delta_n = np.exp(-1j*delta_n*2*math.pi/wavelength) 
+ 
+    return exp_delta_n 
 
 ffi_a = np.array([1.595769140, -0.000001702, -6.808568854, -0.000576361,
                   6.920691902, -0.016898657, -3.050485660, -0.075752419,
